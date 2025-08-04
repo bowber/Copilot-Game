@@ -7,7 +7,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "build-game": "cd ../game && wasm-pack build --target web --out-dir pkg",
-    "build-all": "npm run build-game && npm run build"
+    "build-all": "npm run build-game && npm run build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -18,5 +21,12 @@
     "typescript": "^5.9.2",
     "vite": "^7.0.6",
     "vite-plugin-solid": "^2.11.8"
+  },
+  "devDependencies": {
+    "@solidjs/testing-library": "^0.8.10",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "vitest": "^3.2.4"
   }
 }
