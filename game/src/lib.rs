@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{console, CanvasRenderingContext2d, HtmlCanvasElement, window};
+use web_sys::{console, window, CanvasRenderingContext2d, HtmlCanvasElement};
 
 // Ball physics constants
 pub const BALL_RADIUS: f64 = 25.0;
@@ -79,9 +79,11 @@ impl Game {
     #[wasm_bindgen(constructor)]
     pub fn new(canvas_id: &str) -> Result<Game, JsValue> {
         console_error_panic_hook::set_once();
-        
+
         let window = window().ok_or("no global `window` exists")?;
-        let document = window.document().ok_or("should have a document on window")?;
+        let document = window
+            .document()
+            .ok_or("should have a document on window")?;
         let canvas = document
             .get_element_by_id(canvas_id)
             .ok_or("should have a canvas element")?
@@ -119,9 +121,9 @@ impl Game {
             width: self.width,
             height: self.height,
         };
-        
+
         state.update();
-        
+
         self.ball_x = state.ball_x;
         self.ball_y = state.ball_y;
         self.ball_dx = state.ball_dx;
@@ -133,7 +135,7 @@ impl Game {
     pub fn render(&self) {
         // Clear canvas
         self.ctx.clear_rect(0.0, 0.0, self.width, self.height);
-        
+
         // Set background
         self.ctx.set_fill_style(&JsValue::from_str("#1e1e1e"));
         self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
@@ -141,18 +143,30 @@ impl Game {
         // Draw ball
         self.ctx.begin_path();
         self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
-        self.ctx.arc(self.ball_x, self.ball_y, BALL_RADIUS, 0.0, 2.0 * std::f64::consts::PI).unwrap();
+        self.ctx
+            .arc(
+                self.ball_x,
+                self.ball_y,
+                BALL_RADIUS,
+                0.0,
+                2.0 * std::f64::consts::PI,
+            )
+            .unwrap();
         self.ctx.fill();
 
         // Draw title
         self.ctx.set_fill_style(&JsValue::from_str("white"));
         self.ctx.set_font("40px Arial");
         self.ctx.set_text_align("center");
-        self.ctx.fill_text("Rust Game in Browser!", self.width / 2.0, 50.0).unwrap();
-        
+        self.ctx
+            .fill_text("Rust Game in Browser!", self.width / 2.0, 50.0)
+            .unwrap();
+
         // Draw subtitle
         self.ctx.set_font("20px Arial");
-        self.ctx.fill_text("Made with Rust + WASM", self.width / 2.0, 80.0).unwrap();
+        self.ctx
+            .fill_text("Made with Rust + WASM", self.width / 2.0, 80.0)
+            .unwrap();
     }
 
     #[wasm_bindgen]
@@ -208,15 +222,15 @@ mod tests {
     #[test]
     fn test_game_state_initialization() {
         let state = GameState::new(800.0, 600.0);
-        
+
         // Ball should start at center
         assert_eq!(state.ball_x, 400.0);
         assert_eq!(state.ball_y, 300.0);
-        
+
         // Ball should have default velocity
         assert_eq!(state.ball_dx, DEFAULT_BALL_SPEED_X);
         assert_eq!(state.ball_dy, DEFAULT_BALL_SPEED_Y);
-        
+
         // Dimensions should be set correctly
         assert_eq!(state.width, 800.0);
         assert_eq!(state.height, 600.0);
@@ -227,9 +241,9 @@ mod tests {
         let mut state = GameState::new(800.0, 600.0);
         let initial_x = state.ball_x;
         let initial_y = state.ball_y;
-        
+
         state.update();
-        
+
         // Ball should have moved by velocity amount
         assert_eq!(state.ball_x, initial_x + DEFAULT_BALL_SPEED_X);
         assert_eq!(state.ball_y, initial_y + DEFAULT_BALL_SPEED_Y);
@@ -238,17 +252,20 @@ mod tests {
     #[test]
     fn test_left_wall_collision() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Position ball near left wall, moving left
         state.ball_x = BALL_RADIUS + 1.0;
         state.ball_y = 300.0;
         state.ball_dx = -5.0; // Moving left
         state.ball_dy = 2.0;
-        
+
         state.update();
-        
+
         // Ball should bounce off left wall (dx should reverse)
-        assert!(state.ball_dx > 0.0, "Ball should bounce right after hitting left wall");
+        assert!(
+            state.ball_dx > 0.0,
+            "Ball should bounce right after hitting left wall"
+        );
         assert_eq!(state.ball_dx, 5.0); // Should be positive now
         assert_eq!(state.ball_dy, 2.0); // Y velocity unchanged
         assert_eq!(state.ball_x, BALL_RADIUS); // Should be clamped to boundary
@@ -257,17 +274,20 @@ mod tests {
     #[test]
     fn test_right_wall_collision() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Position ball near right wall, moving right
         state.ball_x = 800.0 - BALL_RADIUS - 1.0;
         state.ball_y = 300.0;
         state.ball_dx = 5.0; // Moving right
         state.ball_dy = 2.0;
-        
+
         state.update();
-        
+
         // Ball should bounce off right wall (dx should reverse)
-        assert!(state.ball_dx < 0.0, "Ball should bounce left after hitting right wall");
+        assert!(
+            state.ball_dx < 0.0,
+            "Ball should bounce left after hitting right wall"
+        );
         assert_eq!(state.ball_dx, -5.0); // Should be negative now
         assert_eq!(state.ball_dy, 2.0); // Y velocity unchanged
         assert_eq!(state.ball_x, 800.0 - BALL_RADIUS); // Should be clamped to boundary
@@ -276,17 +296,20 @@ mod tests {
     #[test]
     fn test_top_wall_collision() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Position ball near top wall, moving up
         state.ball_x = 400.0;
         state.ball_y = BALL_RADIUS + 1.0;
         state.ball_dx = 3.0;
         state.ball_dy = -5.0; // Moving up
-        
+
         state.update();
-        
+
         // Ball should bounce off top wall (dy should reverse)
-        assert!(state.ball_dy > 0.0, "Ball should bounce down after hitting top wall");
+        assert!(
+            state.ball_dy > 0.0,
+            "Ball should bounce down after hitting top wall"
+        );
         assert_eq!(state.ball_dx, 3.0); // X velocity unchanged
         assert_eq!(state.ball_dy, 5.0); // Should be positive now
         assert_eq!(state.ball_y, BALL_RADIUS); // Should be clamped to boundary
@@ -295,17 +318,20 @@ mod tests {
     #[test]
     fn test_bottom_wall_collision() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Position ball near bottom wall, moving down
         state.ball_x = 400.0;
         state.ball_y = 600.0 - BALL_RADIUS - 1.0;
         state.ball_dx = 3.0;
         state.ball_dy = 5.0; // Moving down
-        
+
         state.update();
-        
+
         // Ball should bounce off bottom wall (dy should reverse)
-        assert!(state.ball_dy < 0.0, "Ball should bounce up after hitting bottom wall");
+        assert!(
+            state.ball_dy < 0.0,
+            "Ball should bounce up after hitting bottom wall"
+        );
         assert_eq!(state.ball_dx, 3.0); // X velocity unchanged
         assert_eq!(state.ball_dy, -5.0); // Should be negative now
         assert_eq!(state.ball_y, 600.0 - BALL_RADIUS); // Should be clamped to boundary
@@ -314,18 +340,24 @@ mod tests {
     #[test]
     fn test_corner_collision() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Position ball near top-left corner, moving up and left
         state.ball_x = BALL_RADIUS + 1.0;
         state.ball_y = BALL_RADIUS + 1.0;
         state.ball_dx = -5.0; // Moving left
         state.ball_dy = -3.0; // Moving up
-        
+
         state.update();
-        
+
         // Both velocities should reverse
-        assert!(state.ball_dx > 0.0, "Ball should bounce right after hitting left wall");
-        assert!(state.ball_dy > 0.0, "Ball should bounce down after hitting top wall");
+        assert!(
+            state.ball_dx > 0.0,
+            "Ball should bounce right after hitting left wall"
+        );
+        assert!(
+            state.ball_dy > 0.0,
+            "Ball should bounce down after hitting top wall"
+        );
         assert_eq!(state.ball_dx, 5.0);
         assert_eq!(state.ball_dy, 3.0);
     }
@@ -333,25 +365,37 @@ mod tests {
     #[test]
     fn test_ball_stays_in_bounds() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Run simulation for many steps
         for _ in 0..1000 {
             state.update();
-            
+
             // Ball should always stay within bounds
-            assert!(state.ball_x >= BALL_RADIUS, "Ball X should not go below left boundary");
-            assert!(state.ball_x <= 800.0 - BALL_RADIUS, "Ball X should not go beyond right boundary");
-            assert!(state.ball_y >= BALL_RADIUS, "Ball Y should not go below top boundary");
-            assert!(state.ball_y <= 600.0 - BALL_RADIUS, "Ball Y should not go beyond bottom boundary");
+            assert!(
+                state.ball_x >= BALL_RADIUS,
+                "Ball X should not go below left boundary"
+            );
+            assert!(
+                state.ball_x <= 800.0 - BALL_RADIUS,
+                "Ball X should not go beyond right boundary"
+            );
+            assert!(
+                state.ball_y >= BALL_RADIUS,
+                "Ball Y should not go below top boundary"
+            );
+            assert!(
+                state.ball_y <= 600.0 - BALL_RADIUS,
+                "Ball Y should not go beyond bottom boundary"
+            );
         }
     }
 
     #[test]
     fn test_set_velocity() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         state.set_velocity(10.0, -5.0);
-        
+
         assert_eq!(state.ball_dx, 10.0);
         assert_eq!(state.ball_dy, -5.0);
     }
@@ -359,15 +403,15 @@ mod tests {
     #[test]
     fn test_reset() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Move ball and change velocity
         state.ball_x = 100.0;
         state.ball_y = 200.0;
         state.ball_dx = 10.0;
         state.ball_dy = -8.0;
-        
+
         state.reset();
-        
+
         // Should be back to initial state
         assert_eq!(state.ball_x, 400.0); // Center X
         assert_eq!(state.ball_y, 300.0); // Center Y
@@ -391,14 +435,14 @@ mod tests {
             (1920.0, 1080.0),
             (100.0, 100.0), // Small canvas
         ];
-        
+
         for (width, height) in test_cases {
             let state = GameState::new(width, height);
-            
+
             // Ball should start at center
             assert_eq!(state.ball_x, width / 2.0);
             assert_eq!(state.ball_y, height / 2.0);
-            
+
             // Dimensions should be correct
             assert_eq!(state.width, width);
             assert_eq!(state.height, height);
@@ -408,18 +452,20 @@ mod tests {
     #[test]
     fn test_physics_conservation() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Set initial velocity
         let initial_speed = (state.ball_dx.powi(2) + state.ball_dy.powi(2)).sqrt();
-        
+
         // Run simulation and check that speed is conserved after bounces
         for _ in 0..100 {
             state.update();
             let current_speed = (state.ball_dx.powi(2) + state.ball_dy.powi(2)).sqrt();
-            
+
             // Speed should remain constant (energy conservation)
-            assert!((current_speed - initial_speed).abs() < 1e-10, 
-                    "Speed should be conserved: initial={}, current={}", initial_speed, current_speed);
+            assert!(
+                (current_speed - initial_speed).abs() < 1e-10,
+                "Speed should be conserved: initial={initial_speed}, current={current_speed}"
+            );
         }
     }
 }

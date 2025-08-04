@@ -1,0 +1,10 @@
+# Clippy configuration for WASM/game development
+# This file configures rust clippy linting rules
+
+# Allow patterns common in WASM/game development
+too-many-arguments-threshold = 8
+type-complexity-threshold = 250
+
+# Performance and quality settings
+cognitive-complexity-threshold = 30
+avoid-breaking-exported-api = false

@@ -1,12 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Type definitions for WASM bindings (duplicated here for test isolation)
+interface GameInstance {
+  update(): void;
+  render(): void;
+  resize(width: number, height: number): void;
+  reset(): void;
+  get_ball_position(): { x: number; y: number };
+  get_ball_velocity(): { x: number; y: number };
+}
+
+interface WasmBindings {
+  default(): Promise<void>;
+  start_game(canvasId: string): GameInstance;
+}
+
+declare global {
+  interface Window {
+    wasmBindings: WasmBindings;
+  }
+}
+
 // Test helper functions and utilities
 describe('Game Utilities', () => {
   describe('Canvas Size Calculation', () => {
     beforeEach(() => {
       // Reset window dimensions
-      Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true });
-      Object.defineProperty(window, 'innerHeight', { value: 768, writable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1024,
+        writable: true,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        value: 768,
+        writable: true,
+      });
     });
 
     it('calculates canvas size within constraints', () => {
@@ -24,8 +51,14 @@ describe('Game Utilities', () => {
     });
 
     it('handles small screen sizes', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 400, writable: true });
-      Object.defineProperty(window, 'innerHeight', { value: 300, writable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 400,
+        writable: true,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        value: 300,
+        writable: true,
+      });
 
       const calculateCanvasSize = (maxWidth = 800, maxHeight = 600) => {
         const newWidth = Math.min(window.innerWidth - 40, maxWidth);
@@ -39,8 +72,14 @@ describe('Game Utilities', () => {
     });
 
     it('handles very large screens', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 2560, writable: true });
-      Object.defineProperty(window, 'innerHeight', { value: 1440, writable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 2560,
+        writable: true,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        value: 1440,
+        writable: true,
+      });
 
       const calculateCanvasSize = (maxWidth = 800, maxHeight = 600) => {
         const newWidth = Math.min(window.innerWidth - 40, maxWidth);
@@ -63,7 +102,7 @@ describe('Game Utilities', () => {
 
     it('creates mock game instance with expected methods', () => {
       const game = window.wasmBindings.start_game('test-canvas');
-      
+
       expect(game.update).toBeDefined();
       expect(game.render).toBeDefined();
       expect(game.resize).toBeDefined();
@@ -74,10 +113,10 @@ describe('Game Utilities', () => {
 
     it('returns expected ball position and velocity', () => {
       const game = window.wasmBindings.start_game('test-canvas');
-      
+
       const position = game.get_ball_position();
       const velocity = game.get_ball_velocity();
-      
+
       expect(position).toEqual([400, 300]);
       expect(velocity).toEqual([3, 2]);
     });
@@ -91,13 +130,16 @@ describe('Game Utilities', () => {
       callbacks = [];
       frameId = 0;
 
-      vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => {
-        frameId++;
-        callbacks.push(callback);
-        // Simulate async execution
-        setTimeout(() => callback(Date.now()), 0);
-        return frameId;
-      });
+      vi.stubGlobal(
+        'requestAnimationFrame',
+        (callback: (time: number) => void) => {
+          frameId++;
+          callbacks.push(callback);
+          // Simulate async execution
+          setTimeout(() => callback(Date.now()), 0);
+          return frameId;
+        }
+      );
 
       vi.stubGlobal('cancelAnimationFrame', (id: number) => {
         // Remove callback if exists
@@ -132,12 +174,12 @@ describe('Game Utilities', () => {
       expect(animationId).toBe(1);
 
       // Simulate some frames
-      return new Promise<void>((resolve) => {
+      return new Promise<void>(resolve => {
         setTimeout(() => {
           expect(frameCount).toBeGreaterThan(0);
           stopAnimation(animationId);
           const currentFrameCount = frameCount;
-          
+
           setTimeout(() => {
             // Frame count should not increase after stopping
             expect(frameCount).toBe(currentFrameCount);
@@ -153,7 +195,7 @@ describe('Error Handling', () => {
   it('handles WASM loading errors gracefully', async () => {
     // Mock a failing WASM module
     const originalWasmBindings = window.wasmBindings;
-    
+
     Object.defineProperty(window, 'wasmBindings', {
       value: {
         default: () => Promise.reject(new Error('WASM load failed')),
@@ -194,10 +236,13 @@ describe('Performance Considerations', () => {
     const MAX_CANVAS_WIDTH = 1920;
     const MAX_CANVAS_HEIGHT = 1080;
 
-    const calculateOptimalSize = (windowWidth: number, windowHeight: number) => {
+    const calculateOptimalSize = (
+      windowWidth: number,
+      windowHeight: number
+    ) => {
       const availableWidth = windowWidth - 40; // Account for margins
       const availableHeight = windowHeight - 200; // Account for UI elements
-      
+
       return {
         width: Math.min(availableWidth, MAX_CANVAS_WIDTH),
         height: Math.min(availableHeight, MAX_CANVAS_HEIGHT),
@@ -214,16 +259,16 @@ describe('Performance Considerations', () => {
     const DEFAULT_WIDTH = 800;
     const DEFAULT_HEIGHT = 600;
 
-    const getDefaultCanvasSize = () => ({ 
-      width: DEFAULT_WIDTH, 
-      height: DEFAULT_HEIGHT 
+    const getDefaultCanvasSize = () => ({
+      width: DEFAULT_WIDTH,
+      height: DEFAULT_HEIGHT,
     });
 
     const size = getDefaultCanvasSize();
     expect(size.width).toBe(800);
     expect(size.height).toBe(600);
-    
+
     // Ensure it maintains 4:3 aspect ratio
-    expect(size.width / size.height).toBeCloseTo(4/3, 2);
+    expect(size.width / size.height).toBeCloseTo(4 / 3, 2);
   });
 });

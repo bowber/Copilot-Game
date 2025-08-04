@@ -19,7 +19,7 @@ Object.defineProperty(window, 'wasmBindings', {
 
 // Mock requestAnimationFrame
 Object.defineProperty(window, 'requestAnimationFrame', {
-  value: (callback: FrameRequestCallback) => {
+  value: (callback: (time: number) => void) => {
     return setTimeout(() => callback(Date.now()), 16);
   },
 });
@@ -38,10 +38,10 @@ HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
       arc: vi.fn(),
       fill: vi.fn(),
       fillText: vi.fn(),
-      set fillStyle(_value: any) {},
-      set font(_value: any) {},
-      set textAlign(_value: any) {},
-    } as any;
+      set fillStyle(_value: unknown) {},
+      set font(_value: unknown) {},
+      set textAlign(_value: unknown) {},
+    } as unknown as CanvasRenderingContext2D;
   }
   return null;
-}) as any;
+}) as typeof HTMLCanvasElement.prototype.getContext;

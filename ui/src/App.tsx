@@ -1,64 +1,85 @@
 import { createSignal, onMount, onCleanup } from 'solid-js';
 
+// Type definitions for WASM bindings
+interface GameInstance {
+  update(): void;
+  render(): void;
+  resize(width: number, height: number): void;
+  reset(): void;
+  get_ball_position(): { x: number; y: number };
+  get_ball_velocity(): { x: number; y: number };
+}
+
+interface WasmBindings {
+  default(): Promise<void>;
+  start_game(canvasId: string): GameInstance;
+}
+
 // Extend window interface for our WASM module
 declare global {
   interface Window {
-    wasmBindings: any;
+    wasmBindings: WasmBindings;
   }
 }
 
 const App = () => {
-  const [gameInstance, setGameInstance] = createSignal<any>(null);
+  const [gameInstance, setGameInstance] = createSignal<GameInstance | null>(
+    null
+  );
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameStatus, setGameStatus] = createSignal('Loading...');
   const [canvasSize, setCanvasSize] = createSignal({ width: 800, height: 600 });
-  
+
   let animationId: number | null = null;
   let canvasRef: HTMLCanvasElement | undefined;
 
   const initializeGame = async () => {
     try {
       setGameStatus('Loading WASM module...');
-      
+
       // Wait for the WASM module to be available globally
       let retries = 0;
       while (!window.wasmBindings && retries < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
         retries++;
       }
-      
+
       if (!window.wasmBindings) {
         throw new Error('WASM module failed to load');
       }
-      
+
       setGameStatus('Initializing WASM...');
-      
+
       // Initialize WASM
       await window.wasmBindings.default();
-      
+
+      // eslint-disable-next-line no-console
       console.log('WASM module loaded successfully');
       setGameStatus('Creating game instance...');
-      
+
       if (canvasRef) {
         // Create the game instance
         const game = window.wasmBindings.start_game('game-canvas');
         setGameInstance(game);
         setGameStatus('Game ready!');
-        
+
         // Start the game loop
         startGameLoop();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to initialize game:', error);
-      setGameStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setGameStatus(
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
   const startGameLoop = () => {
     if (!gameInstance()) return;
-    
+
     setIsGameRunning(true);
-    
+
     const gameLoop = () => {
       const game = gameInstance();
       if (game && isGameRunning()) {
@@ -67,7 +88,7 @@ const App = () => {
         animationId = requestAnimationFrame(gameLoop);
       }
     };
-    
+
     gameLoop();
   };
 
@@ -86,22 +107,23 @@ const App = () => {
   };
 
   const resizeCanvas = () => {
-    if (canvasRef && gameInstance()) {
+    const instance = gameInstance();
+    if (canvasRef && instance) {
       const newWidth = Math.min(window.innerWidth - 40, 800);
       const newHeight = Math.min(window.innerHeight - 200, 600);
-      
+
       setCanvasSize({ width: newWidth, height: newHeight });
-      gameInstance().resize(newWidth, newHeight);
+      instance.resize(newWidth, newHeight);
     }
   };
 
   onMount(() => {
     // Set initial canvas size
     resizeCanvas();
-    
+
     // Add resize listener
     window.addEventListener('resize', resizeCanvas);
-    
+
     // Initialize the game
     initializeGame();
   });
@@ -118,9 +140,7 @@ const App = () => {
         <p>A Rust + WASM game with SolidJS frontend</p>
       </header>
 
-      <div class="status">
-        Status: {gameStatus()}
-      </div>
+      <div class="status">Status: {gameStatus()}</div>
 
       <div class="game-container">
         <canvas
@@ -140,11 +160,7 @@ const App = () => {
         >
           Start/Resume
         </button>
-        <button
-          class="button"
-          onClick={stopGame}
-          disabled={!isGameRunning()}
-        >
+        <button class="button" onClick={stopGame} disabled={!isGameRunning()}>
           Pause
         </button>
         <button
@@ -158,10 +174,8 @@ const App = () => {
 
       <div class="info">
         <h3>About This Project</h3>
-        <p>
-          This is a demonstration of a modern web game architecture using:
-        </p>
-        
+        <p>This is a demonstration of a modern web game architecture using:</p>
+
         <div class="architecture">
           <div class="arch-box">
             <h4>🦀 Rust + WASM Backend</h4>
@@ -172,7 +186,7 @@ const App = () => {
               <li>Canvas 2D rendering</li>
             </ul>
           </div>
-          
+
           <div class="arch-box">
             <h4>⚡ SolidJS Frontend</h4>
             <ul>
@@ -195,10 +209,11 @@ const App = () => {
 
         <h3>Technical Details</h3>
         <p>
-          The game engine is written entirely in Rust and compiled to WebAssembly.
-          The SolidJS frontend provides the UI layer and manages the game lifecycle.
-          Communication between Rust and JavaScript happens through wasm-bindgen
-          bindings, allowing for efficient data transfer and function calls.
+          The game engine is written entirely in Rust and compiled to
+          WebAssembly. The SolidJS frontend provides the UI layer and manages
+          the game lifecycle. Communication between Rust and JavaScript happens
+          through wasm-bindgen bindings, allowing for efficient data transfer
+          and function calls.
         </p>
       </div>
     </div>

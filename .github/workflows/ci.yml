@@ -59,9 +59,12 @@ jobs:
         working-directory: ./game
         run: cargo test --verbose
 
-      - name: 🔍 Check TypeScript
+      - name: 🔍 Lint Frontend
         working-directory: ./ui
-        run: npx tsc --noEmit
+        run: |
+          npm run format:check
+          npm run lint
+          npm run type-check
 
       - name: 🧪 Test Frontend
         working-directory: ./ui
