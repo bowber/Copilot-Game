@@ -1,9 +1,13 @@
 {
   "name": "ui",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build-game": "cd ../game && wasm-pack build --target web --out-dir pkg",
+    "build-all": "npm run build-game && npm run build"
   },
   "keywords": [],
   "author": "",

@@ -5,7 +5,10 @@ export default defineConfig({
   plugins: [solid()],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    fs: {
+      allow: ['..']
+    }
   },
   assetsInclude: ['**/*.wasm']
 });
