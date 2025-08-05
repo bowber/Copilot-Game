@@ -2,18 +2,16 @@ import { createSignal, onMount, onCleanup } from 'solid-js';
 import { ErrorToastManager } from './components/ErrorToast';
 import { errorLogger } from './utils/error-logger';
 import GameUI from './components/GameUI';
-import { EnhancedGameInstance, WasmBindings, InputManager, GameStateManager } from './components/GameTypes';
+import {
+  EnhancedGameInstance,
+  InputManager,
+  GameStateManager,
+} from './components/GameTypes';
 import './components/GameUI.css';
 
-// Extend window interface for our enhanced WASM module
-declare global {
-  interface Window {
-    wasmBindings: WasmBindings;
-  }
-}
-
 const App = () => {
-  const [gameInstance, setGameInstance] = createSignal<EnhancedGameInstance | null>(null);
+  const [gameInstance, setGameInstance] =
+    createSignal<EnhancedGameInstance | null>(null);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameStatus, setGameStatus] = createSignal('Loading...');
   const [canvasSize, setCanvasSize] = createSignal({ width: 800, height: 600 });
@@ -34,7 +32,8 @@ const App = () => {
       }
 
       if (!window.wasmBindings) {
-        const errorMsg = 'WASM module failed to load - check network connection';
+        const errorMsg =
+          'WASM module failed to load - check network connection';
         throw new Error(errorMsg);
       }
 
@@ -63,7 +62,8 @@ const App = () => {
         startGameLoop();
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
 
       // Log error with game context
       errorLogger.logGameError(errorMessage, {
@@ -90,7 +90,8 @@ const App = () => {
           animationId = requestAnimationFrame(gameLoop);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Game loop error';
+        const errorMessage =
+          error instanceof Error ? error.message : 'Game loop error';
 
         // Log error with game context
         errorLogger.logGameError(`Game loop error: ${errorMessage}`, {
@@ -133,7 +134,8 @@ const App = () => {
         instance.resize(newWidth, newHeight);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Canvas resize error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Canvas resize error';
 
       // Log error with game context
       errorLogger.logGameError(`Canvas resize error: ${errorMessage}`, {
@@ -146,15 +148,15 @@ const App = () => {
 
   const handleCanvasReady = (canvas: HTMLCanvasElement) => {
     canvasRef = canvas;
-    
+
     // Initialize input manager and attach to canvas
     if (!inputManager) {
       inputManager = new InputManager();
     }
-    
+
     // Focus canvas for keyboard input
     canvas.focus();
-    
+
     // Initialize the game after canvas is ready
     initializeGame();
   };
@@ -170,7 +172,7 @@ const App = () => {
   onCleanup(() => {
     stopGame();
     window.removeEventListener('resize', resizeCanvas);
-    
+
     // Cleanup input manager
     if (inputManager && canvasRef) {
       inputManager.detachFromCanvas(canvasRef);
@@ -209,11 +211,7 @@ const App = () => {
           >
             Start/Resume
           </button>
-          <button 
-            class="button" 
-            onClick={stopGame} 
-            disabled={!isGameRunning()}
-          >
+          <button class="button" onClick={stopGame} disabled={!isGameRunning()}>
             Pause
           </button>
           <button
@@ -274,7 +272,10 @@ const App = () => {
 
           <h3>RPG Game Features</h3>
           <ul>
-            <li>📱 Multiple game screens (Login, Server Selection, Main Menu, Game World)</li>
+            <li>
+              📱 Multiple game screens (Login, Server Selection, Main Menu, Game
+              World)
+            </li>
             <li>🎮 Comprehensive input system (WASD/Arrows, Mouse, Touch)</li>
             <li>🎒 Inventory and Shop systems</li>
             <li>❓ In-game help system</li>
@@ -311,15 +312,17 @@ const App = () => {
 
           <h3>Technical Architecture</h3>
           <p>
-            The enhanced game engine is written in Rust with comprehensive state management
-            and compiled to WebAssembly. The SolidJS frontend provides reactive UI layers
-            for each game screen. Communication between Rust and JavaScript uses enhanced
-            wasm-bindgen bindings with JSON state serialization for efficient data transfer.
+            The enhanced game engine is written in Rust with comprehensive state
+            management and compiled to WebAssembly. The SolidJS frontend
+            provides reactive UI layers for each game screen. Communication
+            between Rust and JavaScript uses enhanced wasm-bindgen bindings with
+            JSON state serialization for efficient data transfer.
           </p>
 
           <p>
-            <strong>🐛 Bug Reporting:</strong> This enhanced RPG includes comprehensive
-            error reporting with detailed technical information for developers.
+            <strong>🐛 Bug Reporting:</strong> This enhanced RPG includes
+            comprehensive error reporting with detailed technical information
+            for developers.
           </p>
         </div>
       </div>

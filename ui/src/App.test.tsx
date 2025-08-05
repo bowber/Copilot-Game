@@ -61,19 +61,23 @@ describe('App Component', () => {
   it('renders architecture information', () => {
     render(() => <App />);
 
-    expect(screen.getByText(/Enhanced Rust \+ WASM Backend/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Enhanced Rust \+ WASM Backend/)
+    ).toBeInTheDocument();
     expect(screen.getByText(/Enhanced SolidJS Frontend/)).toBeInTheDocument();
-    expect(screen.getByText('Multi-screen game state management')).toBeInTheDocument();
-    expect(screen.getByText('Reactive UI state management')).toBeInTheDocument();
+    expect(
+      screen.getByText('Multi-screen game state management')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Reactive UI state management')
+    ).toBeInTheDocument();
   });
 
   it('renders game features list', () => {
     render(() => <App />);
 
     expect(screen.getByText(/Multiple game screens/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Comprehensive input system/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Comprehensive input system/)).toBeInTheDocument();
     expect(screen.getByText(/Inventory and Shop systems/)).toBeInTheDocument();
   });
 

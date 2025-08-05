@@ -210,11 +210,11 @@ code {
     margin: 2rem;
     justify-content: center;
   }
-  
+
   .app-header {
     padding: 1rem;
   }
-  
+
   .app-header h1 {
     font-size: 2rem;
   }
@@ -224,25 +224,25 @@ code {
   .architecture {
     grid-template-columns: 1fr;
   }
-  
+
   .controls-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .app-header h1 {
     font-size: 1.8rem;
   }
-  
+
   .info {
     margin: 1rem;
     padding: 1.5rem;
   }
-  
+
   .dev-controls {
     flex-wrap: wrap;
     gap: 8px;
   }
-  
+
   .button {
     font-size: 12px;
     padding: 6px 12px;
@@ -253,20 +253,20 @@ code {
   .app-header {
     padding: 0.5rem;
   }
-  
+
   .app-header h1 {
     font-size: 1.5rem;
   }
-  
+
   .app-header p {
     font-size: 1rem;
   }
-  
+
   .info {
     margin: 0.5rem;
     padding: 1rem;
   }
-  
+
   .dev-controls {
     margin: 1rem;
     padding: 8px;

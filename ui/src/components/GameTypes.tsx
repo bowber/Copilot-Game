@@ -1,4 +1,4 @@
-import { Component, createSignal, onMount, onCleanup } from 'solid-js';
+import { Component, createSignal, onMount, onCleanup, JSX } from 'solid-js';
 
 // Enhanced interface for the new RPG game backend
 export interface EnhancedGameInstance {
@@ -7,12 +7,12 @@ export interface EnhancedGameInstance {
   render(): void;
   resize(width: number, height: number): void;
   reset(): void;
-  
+
   // New RPG methods
   handle_input(eventType: string, data: string): boolean;
   get_current_screen(): string;
   get_game_state(): string;
-  
+
   // Legacy compatibility methods
   get_ball_position(): number[];
   get_ball_velocity(): number[];
@@ -24,9 +24,9 @@ export interface WasmBindings {
 }
 
 // Game state types (matching Rust backend)
-export type GameScreen = 
+export type GameScreen =
   | 'LoginScreen'
-  | 'ServerSelection' 
+  | 'ServerSelection'
   | 'MainMenu'
   | 'GameHUD'
   | 'Inventory'
@@ -114,43 +114,43 @@ export class InputManager {
 
     // Add keyboard listeners to document (for global input)
     this.keyListeners.forEach((listener, event) => {
-      document.addEventListener(event, listener);
+      document.addEventListener(event, listener as (e: Event) => void);
     });
 
     // Add mouse listeners to canvas
     this.mouseListeners.forEach((listener, event) => {
-      canvas.addEventListener(event, listener);
+      canvas.addEventListener(event, listener as (e: Event) => void);
     });
 
     // Add touch listeners to canvas
     this.touchListeners.forEach((listener, event) => {
-      canvas.addEventListener(event, listener);
+      canvas.addEventListener(event, listener as (e: Event) => void);
     });
   }
 
   detachFromCanvas(canvas: HTMLCanvasElement) {
     // Remove keyboard listeners from document
     this.keyListeners.forEach((listener, event) => {
-      document.removeEventListener(event, listener);
+      document.removeEventListener(event, listener as (e: Event) => void);
     });
 
     // Remove mouse listeners from canvas
     this.mouseListeners.forEach((listener, event) => {
-      canvas.removeEventListener(event, listener);
+      canvas.removeEventListener(event, listener as (e: Event) => void);
     });
 
     // Remove touch listeners from canvas
     this.touchListeners.forEach((listener, event) => {
-      canvas.removeEventListener(event, listener);
+      canvas.removeEventListener(event, listener as (e: Event) => void);
     });
   }
 
   cleanup() {
     // Remove all event listeners
     this.keyListeners.forEach((listener, event) => {
-      document.removeEventListener(event, listener);
+      document.removeEventListener(event, listener as (e: Event) => void);
     });
-    
+
     this.keyListeners.clear();
     this.mouseListeners.clear();
     this.touchListeners.clear();
@@ -160,10 +160,15 @@ export class InputManager {
 // Game state manager component
 export const GameStateManager: Component<{
   gameInstance: EnhancedGameInstance | null;
-  children: (gameState: GameState | null, currentScreen: GameScreen | null) => any;
-}> = (props) => {
+  children: (
+    gameState: GameState | null,
+    currentScreen: GameScreen | null
+  ) => JSX.Element;
+}> = props => {
   const [gameState, setGameState] = createSignal<GameState | null>(null);
-  const [currentScreen, setCurrentScreen] = createSignal<GameScreen | null>(null);
+  const [currentScreen, setCurrentScreen] = createSignal<GameScreen | null>(
+    null
+  );
 
   // Poll game state regularly
   const updateGameState = () => {
@@ -171,10 +176,11 @@ export const GameStateManager: Component<{
       try {
         const screenStr = props.gameInstance.get_current_screen();
         const stateStr = props.gameInstance.get_game_state();
-        
+
         setCurrentScreen(screenStr as GameScreen);
         setGameState(JSON.parse(stateStr) as GameState);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Failed to get game state:', error);
       }
     }
@@ -190,6 +196,7 @@ export const GameStateManager: Component<{
     });
   });
 
+  // eslint-disable-next-line solid/reactivity
   return props.children(gameState(), currentScreen());
 };
 

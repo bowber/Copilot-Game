@@ -18,8 +18,8 @@ pub enum GameScreen {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Region {
     EU,
-    ASIA,
-    VIETNAM,
+    Asia,
+    Vietnam,
 }
 
 /// Core game state that manages the entire game flow
@@ -134,8 +134,12 @@ impl GameState {
         }
 
         // Keep ball in bounds
-        self.ball_x = self.ball_x.clamp(BALL_RADIUS, self.world_width - BALL_RADIUS);
-        self.ball_y = self.ball_y.clamp(BALL_RADIUS, self.world_height - BALL_RADIUS);
+        self.ball_x = self
+            .ball_x
+            .clamp(BALL_RADIUS, self.world_width - BALL_RADIUS);
+        self.ball_y = self
+            .ball_y
+            .clamp(BALL_RADIUS, self.world_height - BALL_RADIUS);
     }
 }
 
@@ -179,14 +183,14 @@ mod tests {
         state.set_region(Region::EU);
         assert_eq!(state.selected_region, Some(Region::EU));
 
-        state.set_region(Region::ASIA);
-        assert_eq!(state.selected_region, Some(Region::ASIA));
+        state.set_region(Region::Asia);
+        assert_eq!(state.selected_region, Some(Region::Asia));
     }
 
     #[test]
     fn test_player_movement() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Movement should only work in GameHUD screen
         state.transition_to(GameScreen::GameHUD);
         let initial_x = state.player_x;
@@ -209,7 +213,7 @@ mod tests {
     #[test]
     fn test_movement_outside_game_screen() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Movement should not work in other screens
         state.transition_to(GameScreen::MainMenu);
         let initial_x = state.player_x;

@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{console, window, CanvasRenderingContext2d, HtmlCanvasElement};
@@ -193,13 +194,14 @@ impl Game {
     pub fn get_game_state(&self) -> String {
         serde_json::to_string(&serde_json::json!({
             "screen": format!("{:?}", self.state.current_screen),
-            "region": self.state.selected_region.as_ref().map(|r| format!("{:?}", r)),
+            "region": self.state.selected_region.as_ref().map(|r| format!("{r:?}")),
             "player_name": self.state.player_name,
             "is_loading": self.state.is_loading,
             "error": self.state.error_message,
             "player_position": [self.state.player_x, self.state.player_y],
             "ball_position": [self.state.ball_x, self.state.ball_y]
-        })).unwrap_or_default()
+        }))
+        .unwrap_or_default()
     }
 
     #[wasm_bindgen]
@@ -208,7 +210,7 @@ impl Game {
         self.height = height as f64;
         self.canvas.set_width(width);
         self.canvas.set_height(height);
-        
+
         // Update game state dimensions
         self.state.world_width = self.width;
         self.state.world_height = self.height;
@@ -255,14 +257,14 @@ impl Game {
                 self.state.transition_to(GameScreen::MainMenu);
                 true
             }
-            (GameScreen::ServerSelection, InputEvent::MouseClick { x, y }) => {
+            (GameScreen::ServerSelection, InputEvent::MouseClick { x: _, y }) => {
                 // Simple region selection based on click position
                 let region = if y < self.height / 3.0 {
                     Region::EU
                 } else if y < 2.0 * self.height / 3.0 {
-                    Region::ASIA
+                    Region::Asia
                 } else {
-                    Region::VIETNAM
+                    Region::Vietnam
                 };
                 self.state.set_region(region);
                 self.state.transition_to(GameScreen::MainMenu);
@@ -294,11 +296,17 @@ impl Game {
             }
 
             // Inventory, Shop, Help Modal - go back to game
-            (GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal, InputEvent::Escape) => {
+            (
+                GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal,
+                InputEvent::Escape,
+            ) => {
                 self.state.transition_to(GameScreen::GameHUD);
                 true
             }
-            (GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal, InputEvent::MenuBack) => {
+            (
+                GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal,
+                InputEvent::MenuBack,
+            ) => {
                 self.state.transition_to(GameScreen::GameHUD);
                 true
             }
@@ -351,7 +359,11 @@ impl Game {
         self.ctx.set_font("16px Arial");
         self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
         self.ctx
-            .fill_text("Click anywhere or press Enter to start", self.width / 2.0, self.height - 50.0)
+            .fill_text(
+                "Click anywhere or press Enter to start",
+                self.width / 2.0,
+                self.height - 50.0,
+            )
             .unwrap();
     }
 
@@ -370,7 +382,11 @@ impl Game {
             .unwrap();
 
         // Region options
-        let regions = [("EU", Region::EU), ("ASIA", Region::ASIA), ("VIETNAM", Region::VIETNAM)];
+        let regions = [
+            ("EU", Region::EU),
+            ("ASIA", Region::Asia),
+            ("VIETNAM", Region::Vietnam),
+        ];
         for (i, (name, region)) in regions.iter().enumerate() {
             let y = 200.0 + (i as f64 * 80.0);
             let is_selected = self.state.selected_region.as_ref() == Some(region);
@@ -383,7 +399,8 @@ impl Game {
             }
 
             // Draw region box
-            self.ctx.fill_rect(self.width / 2.0 - 100.0, y - 25.0, 200.0, 50.0);
+            self.ctx
+                .fill_rect(self.width / 2.0 - 100.0, y - 25.0, 200.0, 50.0);
 
             // Draw region text
             self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
@@ -395,7 +412,11 @@ impl Game {
         self.ctx.set_font("16px Arial");
         self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
         self.ctx
-            .fill_text("Click a region or press Enter", self.width / 2.0, self.height - 50.0)
+            .fill_text(
+                "Click a region or press Enter",
+                self.width / 2.0,
+                self.height - 50.0,
+            )
             .unwrap();
     }
 
@@ -418,7 +439,7 @@ impl Game {
             self.ctx.set_font("20px Arial");
             self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
             self.ctx
-                .fill_text(&format!("Welcome, {}!", name), self.width / 2.0, 170.0)
+                .fill_text(&format!("Welcome, {name}!"), self.width / 2.0, 170.0)
                 .unwrap();
         }
 
@@ -426,22 +447,29 @@ impl Game {
             self.ctx.set_font("16px Arial");
             self.ctx.set_fill_style(&JsValue::from_str("#888888"));
             self.ctx
-                .fill_text(&format!("Region: {:?}", region), self.width / 2.0, 200.0)
+                .fill_text(&format!("Region: {region:?}"), self.width / 2.0, 200.0)
                 .unwrap();
         }
 
         // Start game button
         self.ctx.set_fill_style(&JsValue::from_str("#228b22"));
-        self.ctx.fill_rect(self.width / 2.0 - 100.0, 250.0, 200.0, 50.0);
+        self.ctx
+            .fill_rect(self.width / 2.0 - 100.0, 250.0, 200.0, 50.0);
         self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
         self.ctx.set_font("24px Arial");
-        self.ctx.fill_text("Start Game", self.width / 2.0, 280.0).unwrap();
+        self.ctx
+            .fill_text("Start Game", self.width / 2.0, 280.0)
+            .unwrap();
 
         // Instructions
         self.ctx.set_font("16px Arial");
         self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
         self.ctx
-            .fill_text("Click Start Game or press Enter", self.width / 2.0, self.height - 50.0)
+            .fill_text(
+                "Click Start Game or press Enter",
+                self.width / 2.0,
+                self.height - 50.0,
+            )
             .unwrap();
     }
 
@@ -487,7 +515,10 @@ impl Game {
         // Player position
         self.ctx
             .fill_text(
-                &format!("Player: ({:.0}, {:.0})", self.state.player_x, self.state.player_y),
+                &format!(
+                    "Player: ({:.0}, {:.0})",
+                    self.state.player_x, self.state.player_y
+                ),
                 10.0,
                 30.0,
             )
@@ -496,10 +527,18 @@ impl Game {
         // Controls help
         self.ctx.set_font("14px Arial");
         self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx.fill_text("WASD/Arrows: Move", 10.0, self.height - 90.0).unwrap();
-        self.ctx.fill_text("I: Inventory", 10.0, self.height - 70.0).unwrap();
-        self.ctx.fill_text("T: Shop", 10.0, self.height - 50.0).unwrap();
-        self.ctx.fill_text("H: Help", 10.0, self.height - 30.0).unwrap();
+        self.ctx
+            .fill_text("WASD/Arrows: Move", 10.0, self.height - 90.0)
+            .unwrap();
+        self.ctx
+            .fill_text("I: Inventory", 10.0, self.height - 70.0)
+            .unwrap();
+        self.ctx
+            .fill_text("T: Shop", 10.0, self.height - 50.0)
+            .unwrap();
+        self.ctx
+            .fill_text("H: Help", 10.0, self.height - 30.0)
+            .unwrap();
 
         // Game title
         self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
@@ -513,7 +552,8 @@ impl Game {
     /// Render the inventory screen
     fn render_inventory(&self) {
         // Semi-transparent overlay
-        self.ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
+        self.ctx
+            .set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
         self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
 
         // Inventory panel
@@ -523,12 +563,14 @@ impl Game {
         let panel_y = (self.height - panel_height) / 2.0;
 
         self.ctx.set_fill_style(&JsValue::from_str("#2a2a3a"));
-        self.ctx.fill_rect(panel_x, panel_y, panel_width, panel_height);
+        self.ctx
+            .fill_rect(panel_x, panel_y, panel_width, panel_height);
 
         // Border
         self.ctx.set_stroke_style(&JsValue::from_str("#4fc3f7"));
         self.ctx.set_line_width(2.0);
-        self.ctx.stroke_rect(panel_x, panel_y, panel_width, panel_height);
+        self.ctx
+            .stroke_rect(panel_x, panel_y, panel_width, panel_height);
 
         // Title
         self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
@@ -555,14 +597,19 @@ impl Game {
         self.ctx.set_font("14px Arial");
         self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
         self.ctx
-            .fill_text("Press ESC to close", self.width / 2.0, panel_y + panel_height - 20.0)
+            .fill_text(
+                "Press ESC to close",
+                self.width / 2.0,
+                panel_y + panel_height - 20.0,
+            )
             .unwrap();
     }
 
     /// Render the shop screen
     fn render_shop(&self) {
         // Semi-transparent overlay
-        self.ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
+        self.ctx
+            .set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
         self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
 
         // Shop panel
@@ -572,12 +619,14 @@ impl Game {
         let panel_y = (self.height - panel_height) / 2.0;
 
         self.ctx.set_fill_style(&JsValue::from_str("#3a2a2a"));
-        self.ctx.fill_rect(panel_x, panel_y, panel_width, panel_height);
+        self.ctx
+            .fill_rect(panel_x, panel_y, panel_width, panel_height);
 
         // Border
         self.ctx.set_stroke_style(&JsValue::from_str("#ffd700"));
         self.ctx.set_line_width(2.0);
-        self.ctx.stroke_rect(panel_x, panel_y, panel_width, panel_height);
+        self.ctx
+            .stroke_rect(panel_x, panel_y, panel_width, panel_height);
 
         // Title
         self.ctx.set_fill_style(&JsValue::from_str("#ffd700"));
@@ -591,16 +640,32 @@ impl Game {
         self.ctx.set_font("16px Arial");
         self.ctx.set_fill_style(&JsValue::from_str("#cccccc"));
         self.ctx
-            .fill_text("• Health Potion - 50 gold", self.width / 2.0, panel_y + 80.0)
+            .fill_text(
+                "• Health Potion - 50 gold",
+                self.width / 2.0,
+                panel_y + 80.0,
+            )
             .unwrap();
         self.ctx
-            .fill_text("• Magic Scroll - 100 gold", self.width / 2.0, panel_y + 110.0)
+            .fill_text(
+                "• Magic Scroll - 100 gold",
+                self.width / 2.0,
+                panel_y + 110.0,
+            )
             .unwrap();
         self.ctx
-            .fill_text("• Steel Armor - 500 gold", self.width / 2.0, panel_y + 140.0)
+            .fill_text(
+                "• Steel Armor - 500 gold",
+                self.width / 2.0,
+                panel_y + 140.0,
+            )
             .unwrap();
         self.ctx
-            .fill_text("• Enchanted Ring - 1000 gold", self.width / 2.0, panel_y + 170.0)
+            .fill_text(
+                "• Enchanted Ring - 1000 gold",
+                self.width / 2.0,
+                panel_y + 170.0,
+            )
             .unwrap();
 
         // Player gold
@@ -614,14 +679,19 @@ impl Game {
         self.ctx.set_font("14px Arial");
         self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
         self.ctx
-            .fill_text("Press ESC to close", self.width / 2.0, panel_y + panel_height - 20.0)
+            .fill_text(
+                "Press ESC to close",
+                self.width / 2.0,
+                panel_y + panel_height - 20.0,
+            )
             .unwrap();
     }
 
     /// Render the help modal
     fn render_help_modal(&self) {
         // Semi-transparent overlay
-        self.ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.9)"));
+        self.ctx
+            .set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.9)"));
         self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
 
         // Help panel
@@ -631,12 +701,14 @@ impl Game {
         let panel_y = (self.height - panel_height) / 2.0;
 
         self.ctx.set_fill_style(&JsValue::from_str("#2a3a2a"));
-        self.ctx.fill_rect(panel_x, panel_y, panel_width, panel_height);
+        self.ctx
+            .fill_rect(panel_x, panel_y, panel_width, panel_height);
 
         // Border
         self.ctx.set_stroke_style(&JsValue::from_str("#90ee90"));
         self.ctx.set_line_width(2.0);
-        self.ctx.stroke_rect(panel_x, panel_y, panel_width, panel_height);
+        self.ctx
+            .stroke_rect(panel_x, panel_y, panel_width, panel_height);
 
         // Title
         self.ctx.set_fill_style(&JsValue::from_str("#90ee90"));
@@ -677,7 +749,11 @@ impl Game {
         self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
         self.ctx.set_text_align("center");
         self.ctx
-            .fill_text("Press ESC to close", self.width / 2.0, panel_y + panel_height - 20.0)
+            .fill_text(
+                "Press ESC to close",
+                self.width / 2.0,
+                panel_y + panel_height - 20.0,
+            )
             .unwrap();
     }
 }
@@ -767,7 +843,7 @@ mod tests {
     #[test]
     fn test_player_movement() {
         let mut state = GameState::new(800.0, 600.0);
-        
+
         // Movement should only work in GameHUD screen
         state.transition_to(GameScreen::GameHUD);
         let initial_x = state.player_x;
@@ -783,9 +859,12 @@ mod tests {
         let mut handler = InputHandler::new();
 
         assert_eq!(handler.handle_key_down("KeyW"), Some(InputEvent::MoveUp));
-        assert_eq!(handler.handle_key_down("KeyI"), Some(InputEvent::ToggleInventory));
+        assert_eq!(
+            handler.handle_key_down("KeyI"),
+            Some(InputEvent::ToggleInventory)
+        );
         assert_eq!(handler.handle_key_down("Enter"), Some(InputEvent::Enter));
-        
+
         assert!(handler.is_moving());
         handler.handle_key_up("KeyW");
         assert!(!handler.is_moving());

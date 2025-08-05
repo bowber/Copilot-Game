@@ -1,26 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Type definitions for WASM bindings (duplicated here for test isolation)
-interface GameInstance {
-  update(): void;
-  render(): void;
-  resize(width: number, height: number): void;
-  reset(): void;
-  get_ball_position(): { x: number; y: number };
-  get_ball_velocity(): { x: number; y: number };
-}
-
-interface WasmBindings {
-  default(): Promise<void>;
-  start_game(canvasId: string): GameInstance;
-}
-
-declare global {
-  interface Window {
-    wasmBindings: WasmBindings;
-  }
-}
-
 // Test helper functions and utilities
 describe('Game Utilities', () => {
   describe('Canvas Size Calculation', () => {

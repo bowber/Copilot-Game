@@ -85,8 +85,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -477,22 +481,22 @@
     max-width: 100vw;
     max-height: 60vh;
   }
-  
+
   .modal-panel {
     margin: 1rem;
     max-width: calc(100vw - 2rem);
     max-height: 80vh;
   }
-  
+
   .inventory-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .controls-hint {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  
+
   .top-hud {
     flex-direction: column;
     gap: 0.5rem;
@@ -503,16 +507,16 @@
   .welcome-text h1 {
     font-size: 2rem;
   }
-  
+
   .server-selection-ui h2,
   .main-menu-ui h2 {
     font-size: 1.8rem;
   }
-  
+
   .modal-panel {
     padding: 1rem;
   }
-  
+
   .inventory-grid {
     grid-template-columns: 1fr;
   }

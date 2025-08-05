@@ -1,4 +1,3 @@
-use wasm_bindgen::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// Input events that the game can handle
@@ -9,18 +8,18 @@ pub enum InputEvent {
     MoveDown,
     MoveLeft,
     MoveRight,
-    
+
     // UI interactions
     MenuSelect,
     MenuBack,
     ToggleInventory,
     ToggleShop,
     ToggleHelp,
-    
+
     // Mouse/Touch events
     MouseClick { x: f64, y: f64 },
     TouchTap { x: f64, y: f64 },
-    
+
     // Special events
     Escape,
     Enter,
@@ -42,6 +41,12 @@ pub struct InputState {
 pub struct InputHandler {
     state: InputState,
     movement_speed: f64,
+}
+
+impl Default for InputHandler {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl InputHandler {
@@ -161,22 +166,6 @@ impl InputHandler {
     }
 }
 
-/// Key code mapping for browser compatibility
-pub fn normalize_key_code(code: &str) -> String {
-    // Handle different browser key code formats
-    match code {
-        "w" | "W" => "KeyW".to_string(),
-        "a" | "A" => "KeyA".to_string(),
-        "s" | "S" => "KeyS".to_string(),
-        "d" | "D" => "KeyD".to_string(),
-        "i" | "I" => "KeyI".to_string(),
-        "t" | "T" => "KeyT".to_string(),
-        "h" | "H" => "KeyH".to_string(),
-        " " => "Space".to_string(),
-        other => other.to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -196,12 +185,24 @@ mod tests {
         assert_eq!(handler.handle_key_down("KeyS"), Some(InputEvent::MoveDown));
         assert_eq!(handler.handle_key_down("KeyA"), Some(InputEvent::MoveLeft));
         assert_eq!(handler.handle_key_down("KeyD"), Some(InputEvent::MoveRight));
-        assert_eq!(handler.handle_key_down("KeyI"), Some(InputEvent::ToggleInventory));
-        assert_eq!(handler.handle_key_down("KeyT"), Some(InputEvent::ToggleShop));
-        assert_eq!(handler.handle_key_down("KeyH"), Some(InputEvent::ToggleHelp));
+        assert_eq!(
+            handler.handle_key_down("KeyI"),
+            Some(InputEvent::ToggleInventory)
+        );
+        assert_eq!(
+            handler.handle_key_down("KeyT"),
+            Some(InputEvent::ToggleShop)
+        );
+        assert_eq!(
+            handler.handle_key_down("KeyH"),
+            Some(InputEvent::ToggleHelp)
+        );
         assert_eq!(handler.handle_key_down("Enter"), Some(InputEvent::Enter));
         assert_eq!(handler.handle_key_down("Escape"), Some(InputEvent::Escape));
-        assert_eq!(handler.handle_key_down("Space"), Some(InputEvent::MenuSelect));
+        assert_eq!(
+            handler.handle_key_down("Space"),
+            Some(InputEvent::MenuSelect)
+        );
     }
 
     #[test]
@@ -209,9 +210,18 @@ mod tests {
         let mut handler = InputHandler::new();
 
         assert_eq!(handler.handle_key_down("ArrowUp"), Some(InputEvent::MoveUp));
-        assert_eq!(handler.handle_key_down("ArrowDown"), Some(InputEvent::MoveDown));
-        assert_eq!(handler.handle_key_down("ArrowLeft"), Some(InputEvent::MoveLeft));
-        assert_eq!(handler.handle_key_down("ArrowRight"), Some(InputEvent::MoveRight));
+        assert_eq!(
+            handler.handle_key_down("ArrowDown"),
+            Some(InputEvent::MoveDown)
+        );
+        assert_eq!(
+            handler.handle_key_down("ArrowLeft"),
+            Some(InputEvent::MoveLeft)
+        );
+        assert_eq!(
+            handler.handle_key_down("ArrowRight"),
+            Some(InputEvent::MoveRight)
+        );
     }
 
     #[test]
@@ -232,7 +242,7 @@ mod tests {
     #[test]
     fn test_movement_delta() {
         let mut handler = InputHandler::new();
-        
+
         // No movement initially
         let (dx, dy) = handler.get_movement_delta();
         assert_eq!((dx, dy), (0.0, 0.0));
@@ -284,7 +294,7 @@ mod tests {
     #[test]
     fn test_movement_speed() {
         let mut handler = InputHandler::new();
-        
+
         handler.set_movement_speed(10.0);
         assert_eq!(handler.movement_speed, 10.0);
 
@@ -294,20 +304,9 @@ mod tests {
     }
 
     #[test]
-    fn test_key_code_normalization() {
-        assert_eq!(normalize_key_code("w"), "KeyW");
-        assert_eq!(normalize_key_code("W"), "KeyW");
-        assert_eq!(normalize_key_code("a"), "KeyA");
-        assert_eq!(normalize_key_code("s"), "KeyS");
-        assert_eq!(normalize_key_code("d"), "KeyD");
-        assert_eq!(normalize_key_code(" "), "Space");
-        assert_eq!(normalize_key_code("Enter"), "Enter");
-    }
-
-    #[test]
     fn test_unknown_keys() {
         let mut handler = InputHandler::new();
-        
+
         // Unknown keys should return None
         assert_eq!(handler.handle_key_down("KeyZ"), None);
         assert_eq!(handler.handle_key_down("F2"), None);

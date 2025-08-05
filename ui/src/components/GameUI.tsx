@@ -1,4 +1,4 @@
-import { Component, createSignal, Show } from 'solid-js';
+import { Component, Show } from 'solid-js';
 import { GameState, GameScreen } from './GameTypes';
 
 // UI Components for each game screen
@@ -7,11 +7,8 @@ export const GameUI: Component<{
   currentScreen: GameScreen | null;
   onCanvasReady: (canvas: HTMLCanvasElement) => void;
   canvasSize: { width: number; height: number };
-}> = (props) => {
-  let canvasRef: HTMLCanvasElement | undefined;
-
+}> = props => {
   const setupCanvas = (canvas: HTMLCanvasElement) => {
-    canvasRef = canvas;
     props.onCanvasReady(canvas);
   };
 
@@ -19,6 +16,7 @@ export const GameUI: Component<{
     <div class="game-ui">
       {/* Main game canvas - always present */}
       <canvas
+        // eslint-disable-next-line solid/reactivity
         ref={setupCanvas}
         id="game-canvas"
         class="game-canvas"
@@ -29,9 +27,9 @@ export const GameUI: Component<{
 
       {/* Screen-specific UI overlays */}
       <Show when={props.currentScreen && props.gameState}>
-        <ScreenOverlay 
-          screen={props.currentScreen!} 
-          gameState={props.gameState!} 
+        <ScreenOverlay
+          screen={props.currentScreen!}
+          gameState={props.gameState!}
         />
       </Show>
     </div>
@@ -41,33 +39,33 @@ export const GameUI: Component<{
 const ScreenOverlay: Component<{
   screen: GameScreen;
   gameState: GameState;
-}> = (props) => {
+}> = props => {
   return (
     <div class="screen-overlay">
       <Show when={props.screen === 'LoginScreen'}>
         <LoginScreenOverlay gameState={props.gameState} />
       </Show>
-      
+
       <Show when={props.screen === 'ServerSelection'}>
         <ServerSelectionOverlay gameState={props.gameState} />
       </Show>
-      
+
       <Show when={props.screen === 'MainMenu'}>
         <MainMenuOverlay gameState={props.gameState} />
       </Show>
-      
+
       <Show when={props.screen === 'GameHUD'}>
         <GameHUDOverlay gameState={props.gameState} />
       </Show>
-      
+
       <Show when={props.screen === 'Inventory'}>
         <InventoryOverlay gameState={props.gameState} />
       </Show>
-      
+
       <Show when={props.screen === 'Shop'}>
         <ShopOverlay gameState={props.gameState} />
       </Show>
-      
+
       <Show when={props.screen === 'HelpModal'}>
         <HelpModalOverlay gameState={props.gameState} />
       </Show>
@@ -75,7 +73,7 @@ const ScreenOverlay: Component<{
   );
 };
 
-const LoginScreenOverlay: Component<{ gameState: GameState }> = (props) => {
+const LoginScreenOverlay: Component<{ gameState: GameState }> = props => {
   return (
     <div class="login-overlay">
       <div class="login-ui">
@@ -83,14 +81,14 @@ const LoginScreenOverlay: Component<{ gameState: GameState }> = (props) => {
           <h1>Welcome to RPG Game</h1>
           <p>Click anywhere or press Enter to begin your adventure!</p>
         </div>
-        
+
         <Show when={props.gameState.is_loading}>
           <div class="loading-indicator">
             <div class="spinner"></div>
             <p>Loading...</p>
           </div>
         </Show>
-        
+
         <Show when={props.gameState.error}>
           <div class="error-message">
             <p>Error: {props.gameState.error}</p>
@@ -101,12 +99,12 @@ const LoginScreenOverlay: Component<{ gameState: GameState }> = (props) => {
   );
 };
 
-const ServerSelectionOverlay: Component<{ gameState: GameState }> = (props) => {
+const ServerSelectionOverlay: Component<{ gameState: GameState }> = props => {
   return (
     <div class="server-selection-overlay">
       <div class="server-selection-ui">
         <h2>Select Your Region</h2>
-        
+
         <div class="region-info">
           <Show when={props.gameState.region}>
             <p>Selected: {props.gameState.region}</p>
@@ -115,7 +113,7 @@ const ServerSelectionOverlay: Component<{ gameState: GameState }> = (props) => {
             <p>Click a region below or press Enter for EU</p>
           </Show>
         </div>
-        
+
         <div class="instructions">
           <p>🌍 Choose your preferred server region</p>
           <p>This affects latency and available features</p>
@@ -125,22 +123,22 @@ const ServerSelectionOverlay: Component<{ gameState: GameState }> = (props) => {
   );
 };
 
-const MainMenuOverlay: Component<{ gameState: GameState }> = (props) => {
+const MainMenuOverlay: Component<{ gameState: GameState }> = props => {
   return (
     <div class="main-menu-overlay">
       <div class="main-menu-ui">
         <h2>Main Menu</h2>
-        
+
         <div class="player-info">
           <Show when={props.gameState.player_name}>
             <p class="welcome">Welcome back, {props.gameState.player_name}!</p>
           </Show>
-          
+
           <Show when={props.gameState.region}>
             <p class="region">Region: {props.gameState.region}</p>
           </Show>
         </div>
-        
+
         <div class="menu-actions">
           <p>🎮 Click the Start Game button to enter the world</p>
           <p>⌨️ Or press Enter to begin immediately</p>
@@ -150,7 +148,7 @@ const MainMenuOverlay: Component<{ gameState: GameState }> = (props) => {
   );
 };
 
-const GameHUDOverlay: Component<{ gameState: GameState }> = (props) => {
+const GameHUDOverlay: Component<{ gameState: GameState }> = props => {
   return (
     <div class="game-hud-overlay">
       <div class="hud-elements">
@@ -161,11 +159,12 @@ const GameHUDOverlay: Component<{ gameState: GameState }> = (props) => {
               <span class="player-name">{props.gameState.player_name}</span>
             </Show>
             <span class="coordinates">
-              Position: ({Math.round(props.gameState.player_position[0])}, {Math.round(props.gameState.player_position[1])})
+              Position: ({Math.round(props.gameState.player_position[0])},{' '}
+              {Math.round(props.gameState.player_position[1])})
             </span>
           </div>
         </div>
-        
+
         {/* Bottom HUD */}
         <div class="bottom-hud">
           <div class="controls-hint">
@@ -187,7 +186,7 @@ const GameHUDOverlay: Component<{ gameState: GameState }> = (props) => {
             </div>
           </div>
         </div>
-        
+
         {/* Side panels placeholder */}
         <div class="side-panels">
           <div class="minimap-placeholder">
@@ -199,7 +198,7 @@ const GameHUDOverlay: Component<{ gameState: GameState }> = (props) => {
   );
 };
 
-const InventoryOverlay: Component<{ gameState: GameState }> = (props) => {
+const InventoryOverlay: Component<{ gameState: GameState }> = () => {
   return (
     <div class="inventory-overlay modal-overlay">
       <div class="inventory-panel modal-panel">
@@ -207,7 +206,7 @@ const InventoryOverlay: Component<{ gameState: GameState }> = (props) => {
           <h3>🎒 Inventory</h3>
           <p class="close-hint">Press ESC to close</p>
         </div>
-        
+
         <div class="inventory-content">
           <div class="inventory-grid">
             <div class="item-slot">
@@ -235,7 +234,7 @@ const InventoryOverlay: Component<{ gameState: GameState }> = (props) => {
   );
 };
 
-const ShopOverlay: Component<{ gameState: GameState }> = (props) => {
+const ShopOverlay: Component<{ gameState: GameState }> = () => {
   return (
     <div class="shop-overlay modal-overlay">
       <div class="shop-panel modal-panel">
@@ -243,12 +242,12 @@ const ShopOverlay: Component<{ gameState: GameState }> = (props) => {
           <h3>🏪 Shop</h3>
           <p class="close-hint">Press ESC to close</p>
         </div>
-        
+
         <div class="shop-content">
           <div class="player-gold">
             <span class="gold-amount">💰 Gold: 750</span>
           </div>
-          
+
           <div class="shop-items">
             <div class="shop-item">
               <span class="item-name">🧪 Health Potion</span>
@@ -273,7 +272,7 @@ const ShopOverlay: Component<{ gameState: GameState }> = (props) => {
   );
 };
 
-const HelpModalOverlay: Component<{ gameState: GameState }> = (props) => {
+const HelpModalOverlay: Component<{ gameState: GameState }> = () => {
   return (
     <div class="help-overlay modal-overlay">
       <div class="help-panel modal-panel">
@@ -281,40 +280,63 @@ const HelpModalOverlay: Component<{ gameState: GameState }> = (props) => {
           <h3>❓ Help & Controls</h3>
           <p class="close-hint">Press ESC to close</p>
         </div>
-        
+
         <div class="help-content">
           <div class="help-section">
             <h4>Movement</h4>
             <ul>
-              <li><strong>WASD</strong> or <strong>Arrow Keys</strong> - Move your character</li>
+              <li>
+                <strong>WASD</strong> or <strong>Arrow Keys</strong> - Move your
+                character
+              </li>
             </ul>
           </div>
-          
+
           <div class="help-section">
             <h4>UI Controls</h4>
             <ul>
-              <li><strong>I</strong> - Toggle Inventory</li>
-              <li><strong>T</strong> - Toggle Shop</li>
-              <li><strong>H</strong> or <strong>F1</strong> - Toggle Help</li>
-              <li><strong>ESC</strong> - Go back/Close panels</li>
+              <li>
+                <strong>I</strong> - Toggle Inventory
+              </li>
+              <li>
+                <strong>T</strong> - Toggle Shop
+              </li>
+              <li>
+                <strong>H</strong> or <strong>F1</strong> - Toggle Help
+              </li>
+              <li>
+                <strong>ESC</strong> - Go back/Close panels
+              </li>
             </ul>
           </div>
-          
+
           <div class="help-section">
             <h4>Mouse/Touch</h4>
             <ul>
-              <li><strong>Click</strong> - Interact with UI elements</li>
-              <li><strong>Tap</strong> - Mobile device interaction</li>
+              <li>
+                <strong>Click</strong> - Interact with UI elements
+              </li>
+              <li>
+                <strong>Tap</strong> - Mobile device interaction
+              </li>
             </ul>
           </div>
-          
+
           <div class="help-section">
             <h4>Game Flow</h4>
             <ul>
-              <li>Start at the <strong>Login Screen</strong></li>
-              <li>Select your preferred <strong>Region</strong></li>
-              <li>Navigate through the <strong>Main Menu</strong></li>
-              <li>Enter the <strong>Game World</strong> and explore!</li>
+              <li>
+                Start at the <strong>Login Screen</strong>
+              </li>
+              <li>
+                Select your preferred <strong>Region</strong>
+              </li>
+              <li>
+                Navigate through the <strong>Main Menu</strong>
+              </li>
+              <li>
+                Enter the <strong>Game World</strong> and explore!
+              </li>
             </ul>
           </div>
         </div>
