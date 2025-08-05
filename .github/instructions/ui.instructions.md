@@ -57,7 +57,7 @@ npm run type-check          # TypeScript validation
 Frontend tests cover UI components and WASM integration:
 
 ```bash
-# Run all tests (25 test cases)
+# Run all tests (31 test cases)
 npm test run
 
 # Specific test patterns
