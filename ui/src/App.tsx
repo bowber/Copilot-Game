@@ -178,7 +178,7 @@ const App = () => {
           // In fullscreen mode or mobile, use optimal viewport dimensions
           newWidth = window.innerWidth;
           newHeight = window.innerHeight;
-          
+
           // On mobile, account for address bar and other UI elements
           if (isMobile()) {
             // Use visual viewport if available for better mobile support
@@ -209,7 +209,6 @@ const App = () => {
         gameStatus: gameStatus(),
         isGameRunning: isGameRunning(),
         isFullscreen: isFullscreen(),
-        isMobile: isMobile(),
       });
     }
   };
@@ -233,17 +232,24 @@ const App = () => {
     // Detect mobile device
     const checkMobile = () => {
       // Don't auto-detect mobile in test environment
-      if (typeof window !== 'undefined' && window.location?.hostname === 'localhost' && 
-          (window.navigator?.userAgent?.includes('jsdom') || window.navigator?.userAgent?.includes('test'))) {
+      if (
+        typeof window !== 'undefined' &&
+        window.location?.hostname === 'localhost' &&
+        (window.navigator?.userAgent?.includes('jsdom') ||
+          window.navigator?.userAgent?.includes('test'))
+      ) {
         setIsMobile(false);
         return;
       }
-      
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                            window.innerWidth <= 768 || 
-                            ('ontouchstart' in window);
+
+      const isMobileDevice =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        ) ||
+        window.innerWidth <= 768 ||
+        'ontouchstart' in window;
       setIsMobile(isMobileDevice);
-      
+
       // Auto-enable fullscreen-like experience on mobile for better gameplay
       if (isMobileDevice && !isFullscreen()) {
         setIsFullscreen(true);
@@ -304,7 +310,9 @@ const App = () => {
   return (
     <>
       <ErrorToastManager />
-      <div class={`app-container ${isFullscreen() ? 'fullscreen' : ''} ${isMobile() ? 'mobile' : ''}`}>
+      <div
+        class={`app-container ${isFullscreen() ? 'fullscreen' : ''} ${isMobile() ? 'mobile' : ''}`}
+      >
         <header class={`app-header ${isFullscreen() ? 'hidden' : ''}`}>
           <h1>🎮 RPG Game</h1>
           <p>A Rust + WASM RPG with SolidJS frontend</p>

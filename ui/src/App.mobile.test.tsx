@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@solidjs/testing-library';
+import { render, cleanup } from '@solidjs/testing-library';
 import App from './App';
 
 describe('Mobile Functionality', () => {
@@ -33,7 +33,7 @@ describe('Mobile Functionality', () => {
     // Test that mobile CSS properties would be applied
     // In test environment, we'll just verify the app structure
     render(() => <App />);
-    
+
     const appContainer = document.querySelector('.app-container');
     expect(appContainer).toBeTruthy();
   });
@@ -48,7 +48,7 @@ describe('Mobile Functionality', () => {
     if (canvas) {
       // Verify canvas has touch-optimized attributes
       expect(canvas.getAttribute('tabindex')).toBe('0');
-      
+
       // Verify the canvas element exists and can be targeted for touch events
       expect(canvas.tagName.toLowerCase()).toBe('canvas');
     }
@@ -73,8 +73,9 @@ describe('Mobile Functionality', () => {
     if (canvas) {
       // Canvas should be sized appropriately for mobile
       // The exact size depends on CSS calculations
-      expect(canvas.width).toBeGreaterThan(0);
-      expect(canvas.height).toBeGreaterThan(0);
+      const canvasElement = canvas as HTMLCanvasElement;
+      expect(canvasElement.width).toBeGreaterThan(0);
+      expect(canvasElement.height).toBeGreaterThan(0);
     }
   });
 });

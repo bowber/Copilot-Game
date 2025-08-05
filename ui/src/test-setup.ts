@@ -15,12 +15,14 @@ Object.defineProperty(window, 'wasmBindings', {
       // New RPG methods
       handle_input: vi.fn(() => true),
       get_current_screen: vi.fn(() => 'LoginScreen'),
-      get_game_state: vi.fn(() => JSON.stringify({
-        screen: 'LoginScreen',
-        is_loading: false,
-        player_position: [400, 300],
-        ball_position: [400, 300],
-      })),
+      get_game_state: vi.fn(() =>
+        JSON.stringify({
+          screen: 'LoginScreen',
+          is_loading: false,
+          player_position: [400, 300],
+          ball_position: [400, 300],
+        })
+      ),
     }),
   },
   writable: true,
@@ -57,7 +59,8 @@ HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
 
 // Mock user agent for consistent test environment
 Object.defineProperty(navigator, 'userAgent', {
-  value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 test',
+  value:
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 test',
   configurable: true,
 });
 
