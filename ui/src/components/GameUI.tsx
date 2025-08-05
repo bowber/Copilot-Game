@@ -2,9 +2,6 @@ import { Component, Show } from 'solid-js';
 import { GameState, GameScreen, InputManager } from './GameTypes';
 import MobileControls from './MobileControls';
 import {
-  LoginScreen,
-  ServerSelectionScreen,
-  MainMenuScreen,
   GameHUDScreen,
   InventoryScreen,
   ShopScreen,
@@ -74,18 +71,6 @@ const ScreenSelector: Component<{
 
   return (
     <>
-      <Show when={props.screen === 'LoginScreen'}>
-        <LoginScreen {...screenProps} />
-      </Show>
-
-      <Show when={props.screen === 'ServerSelection'}>
-        <ServerSelectionScreen {...screenProps} />
-      </Show>
-
-      <Show when={props.screen === 'MainMenu'}>
-        <MainMenuScreen {...screenProps} />
-      </Show>
-
       <Show when={props.screen === 'GameHUD'}>
         <GameHUDScreen {...screenProps} />
       </Show>

@@ -2,12 +2,10 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 /// Represents the different screens/states of the RPG game
+/// Now simplified to only include the game HUD and modal overlays
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[wasm_bindgen]
 pub enum GameScreen {
-    LoginScreen,
-    ServerSelection,
-    MainMenu,
     GameHUD,
     Inventory,
     Shop,
@@ -45,9 +43,9 @@ pub struct GameState {
 impl GameState {
     pub fn new(width: f64, height: f64) -> Self {
         Self {
-            current_screen: GameScreen::LoginScreen,
-            selected_region: None,
-            player_name: None,
+            current_screen: GameScreen::GameHUD, // Start directly in game
+            selected_region: Some(Region::EU), // Default region
+            player_name: Some("Player".to_string()), // Default player name
             is_loading: false,
             error_message: None,
             player_x: width / 2.0,
@@ -95,17 +93,16 @@ impl GameState {
 
     /// Update player position (for movement in game world)
     pub fn move_player(&mut self, dx: f64, dy: f64) {
-        if self.current_screen == GameScreen::GameHUD {
-            self.player_x = (self.player_x + dx).clamp(0.0, self.world_width);
-            self.player_y = (self.player_y + dy).clamp(0.0, self.world_height);
-        }
+        // Player can always move when game is active
+        self.player_x = (self.player_x + dx).clamp(0.0, self.world_width);
+        self.player_y = (self.player_y + dy).clamp(0.0, self.world_height);
     }
 
     /// Reset to initial state
     pub fn reset(&mut self) {
-        self.current_screen = GameScreen::LoginScreen;
-        self.selected_region = None;
-        self.player_name = None;
+        self.current_screen = GameScreen::GameHUD; // Reset to game HUD
+        self.selected_region = Some(Region::EU); // Keep default region
+        self.player_name = Some("Player".to_string()); // Keep default name
         self.is_loading = false;
         self.error_message = None;
         self.player_x = self.world_width / 2.0;
@@ -151,9 +148,9 @@ mod tests {
     fn test_game_state_initialization() {
         let state = GameState::new(800.0, 600.0);
 
-        assert_eq!(state.current_screen, GameScreen::LoginScreen);
-        assert_eq!(state.selected_region, None);
-        assert_eq!(state.player_name, None);
+        assert_eq!(state.current_screen, GameScreen::GameHUD);
+        assert_eq!(state.selected_region, Some(Region::EU));
+        assert_eq!(state.player_name, Some("Player".to_string()));
         assert!(!state.is_loading);
         assert_eq!(state.error_message, None);
         assert_eq!(state.player_x, 400.0);
@@ -166,14 +163,17 @@ mod tests {
     fn test_screen_transitions() {
         let mut state = GameState::new(800.0, 600.0);
 
-        state.transition_to(GameScreen::ServerSelection);
-        assert_eq!(state.current_screen, GameScreen::ServerSelection);
+        state.transition_to(GameScreen::Inventory);
+        assert_eq!(state.current_screen, GameScreen::Inventory);
 
-        state.transition_to(GameScreen::MainMenu);
-        assert_eq!(state.current_screen, GameScreen::MainMenu);
+        state.transition_to(GameScreen::Shop);
+        assert_eq!(state.current_screen, GameScreen::Shop);
 
         state.transition_to(GameScreen::GameHUD);
         assert_eq!(state.current_screen, GameScreen::GameHUD);
+
+        state.transition_to(GameScreen::HelpModal);
+        assert_eq!(state.current_screen, GameScreen::HelpModal);
     }
 
     #[test]
@@ -191,8 +191,7 @@ mod tests {
     fn test_player_movement() {
         let mut state = GameState::new(800.0, 600.0);
 
-        // Movement should only work in GameHUD screen
-        state.transition_to(GameScreen::GameHUD);
+        // Player should always be able to move
         let initial_x = state.player_x;
         let initial_y = state.player_y;
 
@@ -211,17 +210,17 @@ mod tests {
     }
 
     #[test]
-    fn test_movement_outside_game_screen() {
+    fn test_movement_in_modal_screens() {
         let mut state = GameState::new(800.0, 600.0);
 
-        // Movement should not work in other screens
-        state.transition_to(GameScreen::MainMenu);
+        // Movement should work even when in modal screens (overlay game)
+        state.transition_to(GameScreen::Inventory);
         let initial_x = state.player_x;
         let initial_y = state.player_y;
 
         state.move_player(10.0, -5.0);
-        assert_eq!(state.player_x, initial_x); // Should not change
-        assert_eq!(state.player_y, initial_y); // Should not change
+        assert_eq!(state.player_x, initial_x + 10.0); // Should change
+        assert_eq!(state.player_y, initial_y - 5.0); // Should change
     }
 
     #[test]
@@ -236,7 +235,7 @@ mod tests {
 
         // Transitioning should clear errors
         state.set_error("Another error".to_string());
-        state.transition_to(GameScreen::MainMenu);
+        state.transition_to(GameScreen::Shop);
         assert_eq!(state.error_message, None);
     }
 
@@ -245,8 +244,8 @@ mod tests {
         let mut state = GameState::new(800.0, 600.0);
 
         // Modify state
-        state.transition_to(GameScreen::GameHUD);
-        state.set_region(Region::EU);
+        state.transition_to(GameScreen::Inventory);
+        state.set_region(Region::Asia);
         state.set_player_name("TestPlayer".to_string());
         state.set_loading(true);
         state.set_error("Test error".to_string());
@@ -255,9 +254,9 @@ mod tests {
         // Reset should restore initial state
         state.reset();
 
-        assert_eq!(state.current_screen, GameScreen::LoginScreen);
-        assert_eq!(state.selected_region, None);
-        assert_eq!(state.player_name, None);
+        assert_eq!(state.current_screen, GameScreen::GameHUD);
+        assert_eq!(state.selected_region, Some(Region::EU));
+        assert_eq!(state.player_name, Some("Player".to_string()));
         assert!(!state.is_loading);
         assert_eq!(state.error_message, None);
         assert_eq!(state.player_x, 400.0);

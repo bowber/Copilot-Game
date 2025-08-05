@@ -126,9 +126,7 @@ impl Game {
         }
 
         // Update legacy ball physics for backward compatibility
-        if self.state.current_screen == GameScreen::GameHUD {
-            self.state.update_ball_physics();
-        }
+        self.state.update_ball_physics();
     }
 
     #[wasm_bindgen]
@@ -138,13 +136,8 @@ impl Game {
         self.ctx.clear_rect(0.0, 0.0, self.width, self.height);
 
         // Only render game world elements (no UI)
-        match self.state.current_screen {
-            GameScreen::GameHUD => self.render_game_world(),
-            _ => {
-                // For non-game screens, just clear the canvas and let SolidJS handle UI
-                self.render_background();
-            }
-        }
+        // Always render the game world since we start in GameHUD
+        self.render_game_world();
     }
 
     /// Handle input events from the frontend
@@ -246,9 +239,6 @@ impl Game {
     #[wasm_bindgen]
     pub fn transition_to_screen(&mut self, screen: &str) {
         let game_screen = match screen {
-            "LoginScreen" => GameScreen::LoginScreen,
-            "ServerSelection" => GameScreen::ServerSelection,
-            "MainMenu" => GameScreen::MainMenu,
             "GameHUD" => GameScreen::GameHUD,
             "Inventory" => GameScreen::Inventory,
             "Shop" => GameScreen::Shop,
@@ -293,72 +283,6 @@ impl Game {
     /// Process input events and update game state accordingly
     fn process_input_event(&mut self, event: InputEvent) -> bool {
         match (&self.state.current_screen, event) {
-            // Login Screen
-            (GameScreen::LoginScreen, InputEvent::Enter) => {
-                self.state.set_player_name("Player".to_string());
-                self.state.transition_to(GameScreen::ServerSelection);
-                true
-            }
-            (GameScreen::LoginScreen, InputEvent::MouseClick { .. }) => {
-                self.state.set_player_name("Player".to_string());
-                self.state.transition_to(GameScreen::ServerSelection);
-                true
-            }
-            (GameScreen::LoginScreen, InputEvent::TouchTap { .. }) => {
-                self.state.set_player_name("Player".to_string());
-                self.state.transition_to(GameScreen::ServerSelection);
-                true
-            }
-
-            // Server Selection
-            (GameScreen::ServerSelection, InputEvent::Enter) => {
-                if self.state.selected_region.is_none() {
-                    self.state.set_region(Region::EU); // Default to EU
-                }
-                self.state.transition_to(GameScreen::MainMenu);
-                true
-            }
-            (GameScreen::ServerSelection, InputEvent::MouseClick { x: _, y }) => {
-                // Simple region selection based on click position
-                let region = if y < self.height / 3.0 {
-                    Region::EU
-                } else if y < 2.0 * self.height / 3.0 {
-                    Region::Asia
-                } else {
-                    Region::Vietnam
-                };
-                self.state.set_region(region);
-                self.state.transition_to(GameScreen::MainMenu);
-                true
-            }
-            (GameScreen::ServerSelection, InputEvent::TouchTap { x: _, y }) => {
-                // Simple region selection based on touch position (same logic as mouse)
-                let region = if y < self.height / 3.0 {
-                    Region::EU
-                } else if y < 2.0 * self.height / 3.0 {
-                    Region::Asia
-                } else {
-                    Region::Vietnam
-                };
-                self.state.set_region(region);
-                self.state.transition_to(GameScreen::MainMenu);
-                true
-            }
-
-            // Main Menu
-            (GameScreen::MainMenu, InputEvent::Enter) => {
-                self.state.transition_to(GameScreen::GameHUD);
-                true
-            }
-            (GameScreen::MainMenu, InputEvent::MouseClick { .. }) => {
-                self.state.transition_to(GameScreen::GameHUD);
-                true
-            }
-            (GameScreen::MainMenu, InputEvent::TouchTap { .. }) => {
-                self.state.transition_to(GameScreen::GameHUD);
-                true
-            }
-
             // Game HUD - movement and UI toggles
             (GameScreen::GameHUD, InputEvent::ToggleInventory) => {
                 self.state.transition_to(GameScreen::Inventory);
@@ -373,7 +297,7 @@ impl Game {
                 true
             }
 
-            // Inventory, Shop, Help Modal - go back to game
+            // Modal screens - go back to game HUD
             (
                 GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal,
                 InputEvent::Escape,
@@ -389,35 +313,8 @@ impl Game {
                 true
             }
 
-            // Global escape handling
-            (_, InputEvent::Escape) => {
-                match self.state.current_screen {
-                    GameScreen::LoginScreen => false, // Can't escape from login
-                    GameScreen::ServerSelection => {
-                        self.state.transition_to(GameScreen::LoginScreen);
-                        true
-                    }
-                    GameScreen::MainMenu => {
-                        self.state.transition_to(GameScreen::ServerSelection);
-                        true
-                    }
-                    GameScreen::GameHUD => false, // Stay in game
-                    _ => {
-                        self.state.transition_to(GameScreen::GameHUD);
-                        true
-                    }
-                }
-            }
-
             _ => false, // Unhandled event
         }
-    }
-
-    /// Render basic background for non-game screens
-    fn render_background(&self) {
-        // Set a basic background color
-        self.ctx.set_fill_style(&JsValue::from_str("#1e1e1e"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
     }
 
     /// Render only the game world elements (ball, player, etc.) - no UI
@@ -513,9 +410,9 @@ mod tests {
     fn test_new_game_state_initialization() {
         let state = GameState::new(800.0, 600.0);
 
-        assert_eq!(state.current_screen, GameScreen::LoginScreen);
-        assert_eq!(state.selected_region, None);
-        assert_eq!(state.player_name, None);
+        assert_eq!(state.current_screen, GameScreen::GameHUD);
+        assert_eq!(state.selected_region, Some(Region::EU));
+        assert_eq!(state.player_name, Some("Player".to_string()));
         assert!(!state.is_loading);
         assert_eq!(state.error_message, None);
         assert_eq!(state.player_x, 400.0);
@@ -528,11 +425,11 @@ mod tests {
     fn test_screen_transitions() {
         let mut state = GameState::new(800.0, 600.0);
 
-        state.transition_to(GameScreen::ServerSelection);
-        assert_eq!(state.current_screen, GameScreen::ServerSelection);
+        state.transition_to(GameScreen::Inventory);
+        assert_eq!(state.current_screen, GameScreen::Inventory);
 
-        state.transition_to(GameScreen::MainMenu);
-        assert_eq!(state.current_screen, GameScreen::MainMenu);
+        state.transition_to(GameScreen::Shop);
+        assert_eq!(state.current_screen, GameScreen::Shop);
 
         state.transition_to(GameScreen::GameHUD);
         assert_eq!(state.current_screen, GameScreen::GameHUD);
@@ -542,8 +439,7 @@ mod tests {
     fn test_player_movement() {
         let mut state = GameState::new(800.0, 600.0);
 
-        // Movement should only work in GameHUD screen
-        state.transition_to(GameScreen::GameHUD);
+        // Movement should work since we start in GameHUD
         let initial_x = state.player_x;
         let initial_y = state.player_y;
 

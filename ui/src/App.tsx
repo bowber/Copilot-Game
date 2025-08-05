@@ -16,7 +16,6 @@ const App = () => {
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameStatus, setGameStatus] = createSignal('Loading...');
   const [canvasSize, setCanvasSize] = createSignal({ width: 800, height: 600 });
-  const [isFullscreen, setIsFullscreen] = createSignal(false);
   const [isMobile, setIsMobile] = createSignal(false);
 
   let animationId: number | null = null;
@@ -126,48 +125,6 @@ const App = () => {
     }
   };
 
-  const toggleFullscreen = () => {
-    const newFullscreenState = !isFullscreen();
-    setIsFullscreen(newFullscreenState);
-
-    // Resize canvas immediately when toggling fullscreen
-    setTimeout(() => resizeCanvas(), 0);
-
-    // Capture current state before any async operations to avoid reactivity issues
-    const currentCanvasSize = canvasSize();
-    const currentGameStatus = gameStatus();
-    const currentIsGameRunning = isGameRunning();
-
-    // Use browser's fullscreen API if available
-    if (newFullscreenState) {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(error => {
-          // Fallback to CSS-only fullscreen if browser fullscreen fails
-          errorLogger.logGameError(
-            'Browser fullscreen not supported or denied',
-            {
-              error: error.message,
-              canvasSize: currentCanvasSize,
-              gameStatus: currentGameStatus,
-              isGameRunning: currentIsGameRunning,
-            }
-          );
-        });
-      }
-    } else {
-      if (document.exitFullscreen && document.fullscreenElement) {
-        document.exitFullscreen().catch(error => {
-          errorLogger.logGameError('Exit fullscreen failed', {
-            error: error.message,
-            canvasSize: currentCanvasSize,
-            gameStatus: currentGameStatus,
-            isGameRunning: currentIsGameRunning,
-          });
-        });
-      }
-    }
-  };
-
   const resizeCanvas = () => {
     try {
       const instance = gameInstance();
@@ -175,21 +132,18 @@ const App = () => {
         let newWidth: number;
         let newHeight: number;
 
-        if (isFullscreen() || isMobile()) {
-          // In fullscreen mode or mobile, use optimal viewport dimensions
+        if (isMobile()) {
+          // On mobile, use optimal viewport dimensions
           newWidth = window.innerWidth;
           newHeight = window.innerHeight;
 
-          // On mobile, account for address bar and other UI elements
-          if (isMobile()) {
-            // Use visual viewport if available for better mobile support
-            if (window.visualViewport) {
-              newWidth = window.visualViewport.width;
-              newHeight = window.visualViewport.height;
-            } else {
-              // Fallback: reduce height slightly for mobile browser UI
-              newHeight = window.innerHeight * 0.95;
-            }
+          // Use visual viewport if available for better mobile support
+          if (window.visualViewport) {
+            newWidth = window.visualViewport.width;
+            newHeight = window.visualViewport.height;
+          } else {
+            // Fallback: reduce height slightly for mobile browser UI
+            newHeight = window.innerHeight * 0.95;
           }
         } else {
           // Normal mode with size constraints
@@ -209,7 +163,6 @@ const App = () => {
         canvasSize: canvasSize(),
         gameStatus: gameStatus(),
         isGameRunning: isGameRunning(),
-        isFullscreen: isFullscreen(),
       });
     }
   };
@@ -250,11 +203,6 @@ const App = () => {
         window.innerWidth <= 768 ||
         'ontouchstart' in window;
       setIsMobile(isMobileDevice);
-
-      // Auto-enable fullscreen-like experience on mobile for better gameplay
-      if (isMobileDevice && !isFullscreen()) {
-        setIsFullscreen(true);
-      }
     };
 
     checkMobile();
@@ -264,42 +212,11 @@ const App = () => {
 
     // Add resize listener
     window.addEventListener('resize', resizeCanvas);
-
-    // Listen for browser fullscreen changes
-    const handleFullscreenChange = () => {
-      const isCurrentlyFullscreen = !!document.fullscreenElement;
-      if (isCurrentlyFullscreen !== isFullscreen()) {
-        setIsFullscreen(isCurrentlyFullscreen);
-        setTimeout(() => resizeCanvas(), 0);
-      }
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
   });
 
   onCleanup(() => {
     stopGame();
     window.removeEventListener('resize', resizeCanvas);
-
-    // Remove fullscreen event listeners
-    const handleFullscreenChange = () => {
-      const isCurrentlyFullscreen = !!document.fullscreenElement;
-      if (isCurrentlyFullscreen !== isFullscreen()) {
-        setIsFullscreen(isCurrentlyFullscreen);
-        setTimeout(() => resizeCanvas(), 0);
-      }
-    };
-
-    document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    document.removeEventListener(
-      'webkitfullscreenchange',
-      handleFullscreenChange
-    );
-    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
 
     // Cleanup input manager
     if (inputManager && canvasRef) {
@@ -311,15 +228,7 @@ const App = () => {
   return (
     <>
       <ErrorToastManager />
-      <div
-        class={`app-container ${isFullscreen() ? 'fullscreen' : ''} ${isMobile() ? 'mobile' : ''}`}
-      >
-        <header class={`app-header ${isFullscreen() ? 'hidden' : ''}`}>
-          <h1>🎮 RPG Game</h1>
-          <p>A Rust + WASM RPG with SolidJS frontend</p>
-          <div class="status">Status: {gameStatus()}</div>
-        </header>
-
+      <div class={`app-container ${isMobile() ? 'mobile' : ''}`}>
         {/* Main Game UI with state management */}
         <GameStateManager gameInstance={gameInstance()}>
           {(gameState, currentScreen) => {
@@ -341,10 +250,8 @@ const App = () => {
           }}
         </GameStateManager>
 
-        {/* Development Controls */}
-        <div
-          class={`dev-controls ${isFullscreen() ? 'fullscreen-controls' : ''}`}
-        >
+        {/* Simplified Development Controls */}
+        <div class="dev-controls">
           <button
             class="button"
             onClick={resumeGame}
@@ -362,14 +269,6 @@ const App = () => {
           >
             Restart
           </button>
-          <button
-            class="button fullscreen-button"
-            onClick={toggleFullscreen}
-            title={isFullscreen() ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-          >
-            {isFullscreen() ? '🔲' : '⛶'}{' '}
-            {isFullscreen() ? 'Exit' : 'Fullscreen'}
-          </button>
 
           {/* Test button for demonstrating error reporting */}
           <button
@@ -381,99 +280,12 @@ const App = () => {
                   canvasSize: canvasSize(),
                   gameStatus: gameStatus(),
                   isGameRunning: isGameRunning(),
-                  isFullscreen: isFullscreen(),
                 }
               );
             }}
           >
             🧪 Test Error
           </button>
-        </div>
-
-        <div class={`info ${isFullscreen() ? 'hidden' : ''}`}>
-          <h3>About This Enhanced RPG</h3>
-          <p>
-            This is a demonstration of a modern RPG game architecture featuring:
-          </p>
-
-          <div class="architecture">
-            <div class="arch-box">
-              <h4>🦀 Enhanced Rust + WASM Backend</h4>
-              <ul>
-                <li>Multi-screen game state management</li>
-                <li>Comprehensive input handling</li>
-                <li>RPG game logic and flow</li>
-                <li>High-performance graphics</li>
-                <li>Canvas 2D rendering (wgpu ready)</li>
-              </ul>
-            </div>
-
-            <div class="arch-box">
-              <h4>⚡ Enhanced SolidJS Frontend</h4>
-              <ul>
-                <li>Reactive UI state management</li>
-                <li>Screen-specific overlays</li>
-                <li>Input event handling</li>
-                <li>TypeScript support</li>
-                <li>Modern web development</li>
-              </ul>
-            </div>
-          </div>
-
-          <h3>RPG Game Features</h3>
-          <ul>
-            <li>
-              📱 Multiple game screens (Login, Server Selection, Main Menu, Game
-              World)
-            </li>
-            <li>🎮 Comprehensive input system (WASD/Arrows, Mouse, Touch)</li>
-            <li>🎒 Inventory and Shop systems</li>
-            <li>❓ In-game help system</li>
-            <li>🌍 Region selection for multiplayer preparation</li>
-            <li>👤 Player character with movement</li>
-            <li>🎯 Pixel-perfect RPG-style graphics</li>
-            <li>🚨 Enhanced error reporting and debugging</li>
-          </ul>
-
-          <h3>Controls</h3>
-          <div class="controls-grid">
-            <div class="control-item">
-              <strong>WASD / Arrow Keys:</strong> Move character
-            </div>
-            <div class="control-item">
-              <strong>I:</strong> Toggle Inventory
-            </div>
-            <div class="control-item">
-              <strong>T:</strong> Toggle Shop
-            </div>
-            <div class="control-item">
-              <strong>H / F1:</strong> Toggle Help
-            </div>
-            <div class="control-item">
-              <strong>ESC:</strong> Go back/Close panels
-            </div>
-            <div class="control-item">
-              <strong>Enter:</strong> Confirm/Continue
-            </div>
-            <div class="control-item">
-              <strong>Mouse/Touch:</strong> Interact with UI
-            </div>
-          </div>
-
-          <h3>Technical Architecture</h3>
-          <p>
-            The enhanced game engine is written in Rust with comprehensive state
-            management and compiled to WebAssembly. The SolidJS frontend
-            provides reactive UI layers for each game screen. Communication
-            between Rust and JavaScript uses enhanced wasm-bindgen bindings with
-            JSON state serialization for efficient data transfer.
-          </p>
-
-          <p>
-            <strong>🐛 Bug Reporting:</strong> This enhanced RPG includes
-            comprehensive error reporting with detailed technical information
-            for developers.
-          </p>
         </div>
       </div>
     </>
