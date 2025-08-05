@@ -207,16 +207,14 @@ export function start_game(canvas_id) {
 
 /**
  * Represents the different screens/states of the RPG game
- * @enum {0 | 1 | 2 | 3 | 4 | 5 | 6}
+ * Now simplified to only include the game HUD and modal overlays
+ * @enum {0 | 1 | 2 | 3}
  */
 export const GameScreen = Object.freeze({
-    LoginScreen: 0, "0": "LoginScreen",
-    ServerSelection: 1, "1": "ServerSelection",
-    MainMenu: 2, "2": "MainMenu",
-    GameHUD: 3, "3": "GameHUD",
-    Inventory: 4, "4": "Inventory",
-    Shop: 5, "5": "Shop",
-    HelpModal: 6, "6": "HelpModal",
+    GameHUD: 0, "0": "GameHUD",
+    Inventory: 1, "1": "Inventory",
+    Shop: 2, "2": "Shop",
+    HelpModal: 3, "3": "HelpModal",
 });
 
 const GameFinalization = (typeof FinalizationRegistry === 'undefined')

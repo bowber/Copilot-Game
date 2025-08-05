@@ -4,15 +4,13 @@ export function main(): void;
 export function start_game(canvas_id: string): Game;
 /**
  * Represents the different screens/states of the RPG game
+ * Now simplified to only include the game HUD and modal overlays
  */
 export enum GameScreen {
-  LoginScreen = 0,
-  ServerSelection = 1,
-  MainMenu = 2,
-  GameHUD = 3,
-  Inventory = 4,
-  Shop = 5,
-  HelpModal = 6,
+  GameHUD = 0,
+  Inventory = 1,
+  Shop = 2,
+  HelpModal = 3,
 }
 export class Game {
   free(): void;
