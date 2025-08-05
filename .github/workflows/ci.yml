@@ -1,0 +1,86 @@
+name: 🚀 CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: 🧪 Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🦀 Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './ui/package-lock.json'
+
+      - name: 📦 Cache Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ./game/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: 🔧 Install wasm-pack
+        run: cargo install wasm-pack --locked
+
+      - name: 📦 Install frontend deps
+        working-directory: ./ui
+        run: npm ci
+
+      - name: 🔍 Lint Rust
+        working-directory: ./game
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: 🧪 Test Rust
+        working-directory: ./game
+        run: cargo test --verbose
+
+      - name: 🔍 Lint Frontend
+        working-directory: ./ui
+        run: |
+          npm run format:check
+          npm run lint
+          npm run type-check
+
+      - name: 🧪 Test Frontend
+        working-directory: ./ui
+        run: npm test run
+
+      - name: 🏗️ Build WASM
+        working-directory: ./game
+        run: wasm-pack build --target web --out-dir pkg
+
+      - name: 🏗️ Build Frontend
+        working-directory: ./ui
+        run: npm run build
+
+      - name: ✅ Summary
+        run: |
+          echo "## ✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+          echo "- 🦀 Rust tests: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚡ Frontend tests: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏗️ Build: ✅" >> $GITHUB_STEP_SUMMARY

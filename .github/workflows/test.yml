@@ -1,0 +1,230 @@
+name: 🧪 Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  rust-tests:
+    name: 🦀 Rust Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./game
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: 📦 Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ./game/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: 🔍 Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: 🔎 Run Clippy lints
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: 🧪 Run Rust tests
+        run: cargo test --verbose
+
+      - name: 🏗️ Test WASM build
+        run: |
+          cargo install wasm-pack --locked
+          wasm-pack build --target web --out-dir pkg
+
+  frontend-tests:
+    name: ⚡ Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './ui/package-lock.json'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: 🧪 Run frontend tests
+        run: npm test run
+
+      - name: 🏗️ Test frontend build
+        run: npm run build
+
+  integration-tests:
+    name: 🔄 Integration Tests
+    runs-on: ubuntu-latest
+    needs: [rust-tests, frontend-tests]
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './ui/package-lock.json'
+
+      - name: 🔧 Install wasm-pack
+        run: cargo install wasm-pack --locked
+
+      - name: 📦 Install frontend dependencies
+        working-directory: ./ui
+        run: npm ci
+
+      - name: 🏗️ Build complete application
+        working-directory: ./ui
+        run: |
+          npm run build-game
+          npm run build
+
+      - name: ✅ Verify build artifacts
+        run: |
+          test -f game/pkg/game.js || (echo "❌ WASM bindings not generated" && exit 1)
+          test -f game/pkg/game_bg.wasm || (echo "❌ WASM file not generated" && exit 1)
+          test -d ui/dist || (echo "❌ Frontend build not generated" && exit 1)
+          echo "✅ All build artifacts present"
+
+      - name: 📊 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            game/pkg/
+            ui/dist/
+          retention-days: 7
+
+  code-quality:
+    name: 📊 Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './ui/package-lock.json'
+
+      - name: 📦 Install frontend dependencies
+        working-directory: ./ui
+        run: npm ci
+
+      - name: 🔍 Check Rust code formatting
+        working-directory: ./game
+        run: cargo fmt --all -- --check
+
+      - name: 🔎 Advanced Rust linting
+        working-directory: ./game
+        run: cargo clippy --all-targets --all-features -- -D warnings -D clippy::all
+
+      - name: 🔍 TypeScript strict checks
+        working-directory: ./ui
+        run: npx tsc --noEmit --strict
+
+      - name: 📏 Check file sizes
+        run: |
+          echo "🔍 Checking repository file sizes..."
+          find . -type f -name "*.rs" -exec wc -l {} + | tail -1 | awk '{print "Rust lines: " $1}'
+          find . -type f -name "*.ts" -o -name "*.tsx" -exec wc -l {} + | tail -1 | awk '{print "TypeScript lines: " $1}'
+          
+      - name: 🔒 Security audit
+        working-directory: ./ui
+        run: npm audit --audit-level=moderate
+
+  performance-check:
+    name: ⚡ Performance Check
+    runs-on: ubuntu-latest
+    needs: [integration-tests]
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 🔧 Install tools
+        run: |
+          cargo install wasm-pack --locked
+          npm install -g npm@latest
+
+      - name: 📊 WASM size check
+        working-directory: ./game
+        run: |
+          wasm-pack build --target web --out-dir pkg --release
+          echo "🦀 WASM bundle sizes:"
+          ls -lah pkg/*.wasm | awk '{print $5 " " $9}'
+          
+          # Check if WASM is under reasonable size limit (1MB)
+          size=$(stat -c%s "pkg/game_bg.wasm")
+          if [ $size -gt 1048576 ]; then
+            echo "⚠️  WASM bundle is larger than 1MB ($size bytes)"
+            echo "Consider optimizing for size"
+          else
+            echo "✅ WASM bundle size is optimal ($size bytes)"
+          fi
+
+      - name: 📊 Frontend bundle analysis
+        working-directory: ./ui
+        run: |
+          npm ci
+          npm run build-game
+          npm run build
+          echo "⚡ Frontend bundle sizes:"
+          ls -lah dist/assets/ | grep -E '\.(js|css)$' | awk '{print $5 " " $9}'
