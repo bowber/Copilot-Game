@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/bowber/Copilot-Game/actions/workflows/ci.yml/badge.svg)](https://github.com/bowber/Copilot-Game/actions/workflows/ci.yml)
 [![Tests](https://github.com/bowber/Copilot-Game/actions/workflows/test.yml/badge.svg)](https://github.com/bowber/Copilot-Game/actions/workflows/test.yml)
+[![Deploy](https://github.com/bowber/Copilot-Game/actions/workflows/deploy.yml/badge.svg)](https://github.com/bowber/Copilot-Game/actions/workflows/deploy.yml)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![SolidJS](https://img.shields.io/badge/solidjs-1.9+-blue.svg)](https://www.solidjs.com/)
@@ -10,6 +11,12 @@
 A modern web game built with **Rust + WebAssembly** for the game engine and **SolidJS + TypeScript** for the frontend. This project demonstrates how to create high-performance browser games using cutting-edge web technologies.
 
 ![Game Screenshot](https://github.com/user-attachments/assets/8dd7f004-cd96-41dd-8829-ab032d28d378)
+
+## 🎮 Live Demo
+
+🚀 **[Play the Game Now!](https://bowber.github.io/Copilot-Game/)**
+
+The live demo is automatically deployed from the `main` branch using GitHub Actions and GitHub Pages. Every push to the main branch triggers a fresh build and deployment.
 
 ## 🧪 Testing & Quality
 
@@ -184,7 +191,16 @@ Copilot-Game/
 
 ## 🚢 Deployment
 
-### Building for Production
+### Automated Deployment (GitHub Pages)
+
+The game is automatically deployed to GitHub Pages on every push to the `main` branch:
+
+- **Live Demo**: [https://bowber.github.io/Copilot-Game/](https://bowber.github.io/Copilot-Game/)
+- **Deployment Workflow**: `.github/workflows/deploy.yml`
+- **Build Process**: Automated Rust WASM + SolidJS frontend compilation
+- **Status**: [![Deploy](https://github.com/bowber/Copilot-Game/actions/workflows/deploy.yml/badge.svg)](https://github.com/bowber/Copilot-Game/actions/workflows/deploy.yml)
+
+### Manual Building for Production
 
 ```bash
 # Build everything
@@ -195,7 +211,8 @@ cd ../ui && npm run build
 ```
 
 ### Deployment Options
-- **Static Hosting**: Deploy `ui/dist/` to any static host (Netlify, Vercel, GitHub Pages)
+- **GitHub Pages**: Automated deployment from main branch (default)
+- **Static Hosting**: Deploy `ui/dist/` to any static host (Netlify, Vercel, etc.)
 - **CDN**: WASM files are automatically optimized for CDN delivery
 - **Docker**: Can be containerized with any web server
 
