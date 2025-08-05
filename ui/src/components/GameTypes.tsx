@@ -14,6 +14,13 @@ export interface EnhancedGameInstance {
   get_current_screen(): string;
   get_game_state(): string;
 
+  // UI control methods (new)
+  transition_to_screen(screen: string): void;
+  set_player_name(name: string): void;
+  set_region(region: string): void;
+  get_player_position(): number[];
+  is_player_moving(): boolean;
+
   // Legacy compatibility methods
   get_ball_position(): number[];
   get_ball_velocity(): number[];
@@ -34,7 +41,7 @@ export type GameScreen =
   | 'Shop'
   | 'HelpModal';
 
-export type Region = 'EU' | 'ASIA' | 'VIETNAM';
+export type Region = 'EU' | 'Asia' | 'Vietnam';
 
 export interface GameState {
   screen: GameScreen;

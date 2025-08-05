@@ -35,6 +35,26 @@ export class Game {
   reset(): void;
   get_ball_position(): Float64Array;
   get_ball_velocity(): Float64Array;
+  /**
+   * Transition to a specific screen (called from SolidJS)
+   */
+  transition_to_screen(screen: string): void;
+  /**
+   * Set player name (called from SolidJS)
+   */
+  set_player_name(name: string): void;
+  /**
+   * Set selected region (called from SolidJS)
+   */
+  set_region(region: string): void;
+  /**
+   * Get player position for UI display
+   */
+  get_player_position(): Float64Array;
+  /**
+   * Check if player is moving (for UI indicators)
+   */
+  is_player_moving(): boolean;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -52,6 +72,11 @@ export interface InitOutput {
   readonly game_reset: (a: number) => void;
   readonly game_get_ball_position: (a: number) => [number, number];
   readonly game_get_ball_velocity: (a: number) => [number, number];
+  readonly game_transition_to_screen: (a: number, b: number, c: number) => void;
+  readonly game_set_player_name: (a: number, b: number, c: number) => void;
+  readonly game_set_region: (a: number, b: number, c: number) => void;
+  readonly game_get_player_position: (a: number) => [number, number];
+  readonly game_is_player_moving: (a: number) => number;
   readonly main: () => void;
   readonly start_game: (a: number, b: number) => [number, number, number];
   readonly __wbindgen_exn_store: (a: number) => void;

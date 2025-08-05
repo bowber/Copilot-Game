@@ -50,7 +50,7 @@ const App = () => {
 
       if (canvasRef) {
         // Create the enhanced game instance
-        const game = window.wasmBindings.start_game('game-canvas');
+        const game = window.wasmBindings.start_game('game-canvas') as EnhancedGameInstance;
         setGameInstance(game);
         setGameStatus('Game ready!');
 
@@ -329,6 +329,7 @@ const App = () => {
               canvasSize={canvasSize()}
               inputManager={inputManager}
               isMobile={isMobile()}
+              gameInstance={gameInstance()}
             />
           )}
         </GameStateManager>
