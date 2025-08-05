@@ -1,4 +1,6 @@
 import { createSignal, onMount, onCleanup } from 'solid-js';
+import { ErrorToastManager } from './components/ErrorToast';
+import { errorLogger } from './utils/error-logger';
 
 // Type definitions for WASM bindings
 interface GameInstance {
@@ -45,7 +47,9 @@ const App = () => {
       }
 
       if (!window.wasmBindings) {
-        throw new Error('WASM module failed to load');
+        const errorMsg =
+          'WASM module failed to load - check network connection';
+        throw new Error(errorMsg);
       }
 
       setGameStatus('Initializing WASM...');
@@ -67,11 +71,17 @@ const App = () => {
         startGameLoop();
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to initialize game:', error);
-      setGameStatus(
-        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
+      // Log error with game context
+      errorLogger.logGameError(errorMessage, {
+        canvasSize: canvasSize(),
+        gameStatus: gameStatus(),
+        isGameRunning: isGameRunning(),
+      });
+
+      setGameStatus(`Error: ${errorMessage}`);
     }
   };
 
@@ -81,11 +91,27 @@ const App = () => {
     setIsGameRunning(true);
 
     const gameLoop = () => {
-      const game = gameInstance();
-      if (game && isGameRunning()) {
-        game.update();
-        game.render();
-        animationId = requestAnimationFrame(gameLoop);
+      try {
+        const game = gameInstance();
+        if (game && isGameRunning()) {
+          game.update();
+          game.render();
+          animationId = requestAnimationFrame(gameLoop);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Game loop error';
+
+        // Log error with game context
+        errorLogger.logGameError(`Game loop error: ${errorMessage}`, {
+          canvasSize: canvasSize(),
+          gameStatus: gameStatus(),
+          isGameRunning: isGameRunning(),
+        });
+
+        // Stop the game loop to prevent repeated errors
+        setIsGameRunning(false);
+        setGameStatus(`Game Error: ${errorMessage}`);
       }
     };
 
@@ -107,13 +133,25 @@ const App = () => {
   };
 
   const resizeCanvas = () => {
-    const instance = gameInstance();
-    if (canvasRef && instance) {
-      const newWidth = Math.min(window.innerWidth - 40, 800);
-      const newHeight = Math.min(window.innerHeight - 200, 600);
+    try {
+      const instance = gameInstance();
+      if (canvasRef && instance) {
+        const newWidth = Math.min(window.innerWidth - 40, 800);
+        const newHeight = Math.min(window.innerHeight - 200, 600);
 
-      setCanvasSize({ width: newWidth, height: newHeight });
-      instance.resize(newWidth, newHeight);
+        setCanvasSize({ width: newWidth, height: newHeight });
+        instance.resize(newWidth, newHeight);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Canvas resize error';
+
+      // Log error with game context
+      errorLogger.logGameError(`Canvas resize error: ${errorMessage}`, {
+        canvasSize: canvasSize(),
+        gameStatus: gameStatus(),
+        isGameRunning: isGameRunning(),
+      });
     }
   };
 
@@ -131,92 +169,129 @@ const App = () => {
   onCleanup(() => {
     stopGame();
     window.removeEventListener('resize', resizeCanvas);
+    // Note: errorLogger cleanup is handled globally, not per component
   });
 
   return (
-    <div class="container">
-      <header>
-        <h1>🎮 Copilot Game</h1>
-        <p>A Rust + WASM game with SolidJS frontend</p>
-      </header>
+    <>
+      <ErrorToastManager />
+      <div class="container">
+        <header>
+          <h1>🎮 Copilot Game</h1>
+          <p>A Rust + WASM game with SolidJS frontend</p>
+        </header>
 
-      <div class="status">Status: {gameStatus()}</div>
+        <div class="status">Status: {gameStatus()}</div>
 
-      <div class="game-container">
-        <canvas
-          ref={canvasRef}
-          id="game-canvas"
-          class="game-canvas"
-          width={canvasSize().width}
-          height={canvasSize().height}
-        />
-      </div>
-
-      <div class="controls">
-        <button
-          class="button"
-          onClick={resumeGame}
-          disabled={!gameInstance() || isGameRunning()}
-        >
-          Start/Resume
-        </button>
-        <button class="button" onClick={stopGame} disabled={!isGameRunning()}>
-          Pause
-        </button>
-        <button
-          class="button"
-          onClick={initializeGame}
-          disabled={!gameInstance()}
-        >
-          Restart
-        </button>
-      </div>
-
-      <div class="info">
-        <h3>About This Project</h3>
-        <p>This is a demonstration of a modern web game architecture using:</p>
-
-        <div class="architecture">
-          <div class="arch-box">
-            <h4>🦀 Rust + WASM Backend</h4>
-            <ul>
-              <li>Game logic written in Rust</li>
-              <li>Compiled to WebAssembly</li>
-              <li>High-performance graphics</li>
-              <li>Canvas 2D rendering</li>
-            </ul>
-          </div>
-
-          <div class="arch-box">
-            <h4>⚡ SolidJS Frontend</h4>
-            <ul>
-              <li>Reactive UI framework</li>
-              <li>TypeScript support</li>
-              <li>Vite build system</li>
-              <li>Modern web development</li>
-            </ul>
-          </div>
+        <div class="game-container">
+          <canvas
+            ref={canvasRef}
+            id="game-canvas"
+            class="game-canvas"
+            width={canvasSize().width}
+            height={canvasSize().height}
+          />
         </div>
 
-        <h3>Game Features</h3>
-        <ul>
-          <li>Smooth 60 FPS animation</li>
-          <li>Responsive canvas that adapts to screen size</li>
-          <li>Physics-based ball movement with collision detection</li>
-          <li>Real-time rendering from Rust to HTML5 Canvas</li>
-          <li>Game state management (play/pause/restart)</li>
-        </ul>
+        <div class="controls">
+          <button
+            class="button"
+            onClick={resumeGame}
+            disabled={!gameInstance() || isGameRunning()}
+          >
+            Start/Resume
+          </button>
+          <button class="button" onClick={stopGame} disabled={!isGameRunning()}>
+            Pause
+          </button>
+          <button
+            class="button"
+            onClick={initializeGame}
+            disabled={!gameInstance()}
+          >
+            Restart
+          </button>
 
-        <h3>Technical Details</h3>
-        <p>
-          The game engine is written entirely in Rust and compiled to
-          WebAssembly. The SolidJS frontend provides the UI layer and manages
-          the game lifecycle. Communication between Rust and JavaScript happens
-          through wasm-bindgen bindings, allowing for efficient data transfer
-          and function calls.
-        </p>
+          {/* Test button for demonstrating error reporting */}
+          <button
+            class="button"
+            onClick={() => {
+              errorLogger.logManualError(
+                'This is a test error to demonstrate the error reporting system',
+                {
+                  canvasSize: canvasSize(),
+                  gameStatus: gameStatus(),
+                  isGameRunning: isGameRunning(),
+                }
+              );
+            }}
+            style={{
+              'background-color': '#ff6b6b',
+              'margin-left': '20px',
+            }}
+          >
+            🧪 Test Error
+          </button>
+        </div>
+
+        <div class="info">
+          <h3>About This Project</h3>
+          <p>
+            This is a demonstration of a modern web game architecture using:
+          </p>
+
+          <div class="architecture">
+            <div class="arch-box">
+              <h4>🦀 Rust + WASM Backend</h4>
+              <ul>
+                <li>Game logic written in Rust</li>
+                <li>Compiled to WebAssembly</li>
+                <li>High-performance graphics</li>
+                <li>Canvas 2D rendering</li>
+              </ul>
+            </div>
+
+            <div class="arch-box">
+              <h4>⚡ SolidJS Frontend</h4>
+              <ul>
+                <li>Reactive UI framework</li>
+                <li>TypeScript support</li>
+                <li>Vite build system</li>
+                <li>Modern web development</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3>Game Features</h3>
+          <ul>
+            <li>Smooth 60 FPS animation</li>
+            <li>Responsive canvas that adapts to screen size</li>
+            <li>Physics-based ball movement with collision detection</li>
+            <li>Real-time rendering from Rust to HTML5 Canvas</li>
+            <li>Game state management (play/pause/restart)</li>
+            <li>
+              🚨 <strong>Enhanced error reporting and debugging</strong>
+            </li>
+          </ul>
+
+          <h3>Technical Details</h3>
+          <p>
+            The game engine is written entirely in Rust and compiled to
+            WebAssembly. The SolidJS frontend provides the UI layer and manages
+            the game lifecycle. Communication between Rust and JavaScript
+            happens through wasm-bindgen bindings, allowing for efficient data
+            transfer and function calls.
+          </p>
+
+          <p>
+            <strong>🐛 Bug Reporting:</strong> This game now includes
+            comprehensive error reporting. If you encounter any issues, error
+            details will appear as toast notifications with detailed technical
+            information that can be copied to help developers diagnose problems.
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
