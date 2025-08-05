@@ -327,6 +327,8 @@ const App = () => {
               currentScreen={currentScreen}
               onCanvasReady={handleCanvasReady}
               canvasSize={canvasSize()}
+              inputManager={inputManager}
+              isMobile={isMobile()}
             />
           )}
         </GameStateManager>

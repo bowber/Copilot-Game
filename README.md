@@ -36,7 +36,8 @@ cargo fmt                     # Format code
 ```
 
 ### ⚡ Frontend Tests  
-- **Component Tests**: UI component rendering and behavior (31 test cases)
+- **Component Tests**: UI component rendering and behavior (50 test cases)
+- **Mobile Controls**: Virtual joystick and touch button testing
 - **Integration Tests**: WASM module loading and game controls
 - **Utility Tests**: Canvas sizing, animation frame handling
 - **Type Safety**: Strict TypeScript checking
@@ -168,13 +169,47 @@ Copilot-Game/
 - **Smooth Animation**: 60 FPS rendering loop
 - **Responsive Canvas**: Automatically adjusts to window size
 - **Game Controls**: Start/pause/restart functionality
+- **Mobile Controls**: Virtual joystick and touch buttons for mobile devices
 - **Real-time Rendering**: Direct Rust-to-Canvas rendering
+- **Cross-platform**: Desktop, tablet, and mobile support
 
 ### Technical Implementation
 - **Game Loop**: Implemented in Rust for consistent performance
 - **Collision Detection**: AABB collision with boundary bouncing
 - **Memory Management**: Efficient WASM memory usage
 - **Cross-platform**: Runs on any modern web browser
+
+## 📱 Mobile Controls
+
+The game includes comprehensive mobile controls for touch-based gameplay:
+
+![Mobile Controls Demo](https://github.com/user-attachments/assets/5dc0714d-6463-4d6c-9ea7-9aef814feecf)
+
+### Virtual Joystick
+- **Location**: Bottom-left corner of the screen
+- **Function**: Touch-based movement control (replaces WASD/arrow keys)
+- **Design**: Circular joystick with responsive knob
+- **Interaction**: Drag to move, detects 8-directional input
+
+### Touch Buttons
+- **🎒 Inventory Button**: Access inventory (I key equivalent)
+- **🏪 Shop Button**: Open shop interface (T key equivalent)  
+- **❓ Help Button**: Get help and controls info (H key equivalent)
+- **Location**: Bottom-right corner, vertically stacked
+
+### Mobile Features
+- **Auto-detection**: Automatically enables on mobile devices
+- **Responsive Design**: Scales for different screen sizes and orientations
+- **Touch Optimized**: Large touch targets with visual feedback
+- **Glassmorphism UI**: Modern blurred glass aesthetic
+- **Non-intrusive**: Only appears during active gameplay (GameHUD screen)
+- **Accessibility**: Proper ARIA labels and touch area sizing
+
+### Technical Implementation
+- **React Integration**: Built with SolidJS components
+- **Input Mapping**: Converts touch events to keyboard equivalents
+- **Performance**: Minimal overhead, maintains 60 FPS gameplay
+- **Compatibility**: Works with existing input system seamlessly
 
 ## 🔧 Configuration
 

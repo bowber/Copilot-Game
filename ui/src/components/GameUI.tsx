@@ -1,5 +1,7 @@
 import { Component, Show } from 'solid-js';
-import { GameState, GameScreen } from './GameTypes';
+import { GameState, GameScreen, InputManager } from './GameTypes';
+import MobileControls from './MobileControls';
+import './MobileControls.css';
 
 // UI Components for each game screen
 export const GameUI: Component<{
@@ -7,6 +9,8 @@ export const GameUI: Component<{
   currentScreen: GameScreen | null;
   onCanvasReady: (canvas: HTMLCanvasElement) => void;
   canvasSize: { width: number; height: number };
+  inputManager?: InputManager | null;
+  isMobile?: boolean;
 }> = props => {
   const setupCanvas = (canvas: HTMLCanvasElement) => {
     props.onCanvasReady(canvas);
@@ -31,6 +35,11 @@ export const GameUI: Component<{
           screen={props.currentScreen!}
           gameState={props.gameState!}
         />
+      </Show>
+
+      {/* Mobile Controls - only show on GameHUD screen when mobile */}
+      <Show when={props.isMobile && props.currentScreen === 'GameHUD'}>
+        <MobileControls inputManager={props.inputManager || null} show={true} />
       </Show>
     </div>
   );

@@ -1,0 +1,187 @@
+/* Mobile Controls Styles */
+
+/* Mobile Controls Container */
+.mobile-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 20; /* Above game overlay */
+  transition: opacity 0.3s ease;
+}
+
+.mobile-controls.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-controls.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Virtual Joystick */
+.virtual-joystick {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(79, 195, 247, 0.6);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.virtual-joystick-knob {
+  position: relative;
+  border-radius: 50%;
+  background: rgba(79, 195, 247, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease-out;
+  pointer-events: none;
+}
+
+.virtual-joystick:active .virtual-joystick-knob {
+  background: rgba(79, 195, 247, 1);
+  transform: scale(1.1);
+}
+
+/* Mobile Control Buttons */
+.mobile-control-buttons {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  pointer-events: auto;
+}
+
+.mobile-control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid rgba(79, 195, 247, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mobile-control-btn:hover,
+.mobile-control-btn:active {
+  background: rgba(79, 195, 247, 0.3);
+  border-color: rgba(79, 195, 247, 0.9);
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(79, 195, 247, 0.4);
+}
+
+.mobile-control-btn:active {
+  transform: scale(0.95);
+}
+
+/* Button specific styles */
+.inventory-btn {
+  /* Inventory button - backpack icon */
+}
+
+.shop-btn {
+  /* Shop button - shop icon */
+}
+
+.help-btn {
+  /* Help button - question mark icon */
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 480px) {
+  .virtual-joystick {
+    bottom: 20px;
+    left: 20px;
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  .mobile-control-buttons {
+    bottom: 20px;
+    right: 20px;
+    gap: 12px;
+  }
+
+  .mobile-control-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  .virtual-joystick {
+    bottom: 15px;
+    left: 15px;
+  }
+
+  .mobile-control-buttons {
+    bottom: 15px;
+    right: 15px;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .mobile-control-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+}
+
+/* High DPI display adjustments */
+@media (-webkit-min-device-pixel-ratio: 2) {
+  .virtual-joystick,
+  .mobile-control-btn {
+    border-width: 2px;
+  }
+}
+
+/* Accessibility improvements */
+.mobile-control-btn:focus-visible {
+  outline: 2px solid rgba(79, 195, 247, 0.8);
+  outline-offset: 2px;
+}
+
+/* Animation for showing/hiding controls */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-controls.visible .virtual-joystick,
+.mobile-controls.visible .mobile-control-buttons {
+  animation: fadeInUp 0.3s ease-out;
+}

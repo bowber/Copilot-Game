@@ -206,6 +206,26 @@ export class InputManager {
     });
   }
 
+  // Virtual key handling for mobile controls
+  handleVirtualKey(code: string, isPressed: boolean) {
+    if (this.gameInstance) {
+      try {
+        const eventType = isPressed ? 'keydown' : 'keyup';
+        const handled = this.gameInstance.handle_input(eventType, code);
+        return handled;
+      } catch (error) {
+        errorLogger.logGameError(
+          `Error handling virtual ${isPressed ? 'keydown' : 'keyup'} event for ${code}`,
+          {
+            error: String(error),
+          }
+        );
+        return false;
+      }
+    }
+    return false;
+  }
+
   cleanup() {
     // Remove all event listeners
     this.keyListeners.forEach((listener, event) => {
