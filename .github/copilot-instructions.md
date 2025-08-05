@@ -230,6 +230,36 @@ cd ui && npm test -- --reporter=verbose
 - [wasm-pack Documentation](https://rustwasm.github.io/wasm-pack/)
 - [Vite Documentation](https://vitejs.dev/)
 
+## 🔄 Self Improvement
+
+**Important**: Whenever making changes that affect development workflows, project structure, or documentation accuracy, always update the following files to maintain consistency:
+
+- **`.github/copilot-instructions.md`** - This main instruction file
+- **`.github/instructions/`** - Specific instruction files for different components:
+  - `workflows.instructions.md` - CI/CD pipeline instructions  
+  - `ui.instructions.md` - SolidJS frontend instructions
+  - `game.instructions.md` - Rust game engine instructions
+
+### When to Update Instructions
+
+Update instruction files when changes affect:
+- **Build processes** - Scripts, dependencies, compilation steps
+- **Development workflows** - Setup procedures, commands, tools
+- **Testing procedures** - Test commands, coverage, new test frameworks
+- **Linting rules** - Code quality standards, formatting requirements
+- **Project structure** - File organization, directory layout
+- **Dependencies** - Package manager files, version requirements
+- **Configuration files** - Tooling config, environment setup
+- **CI/CD pipelines** - Workflow changes, quality gates
+
+### Update Guidelines
+
+- Keep instructions **accurate** and **up-to-date** with code changes
+- Maintain **consistent tone** and formatting across all instruction files
+- Update **version numbers** and **command examples** when they change
+- Ensure **cross-references** between instruction files remain valid
+- Test **commands and procedures** mentioned in updated instructions
+
 ---
 
 *This documentation ensures a smooth development experience and maintains code quality standards.*
