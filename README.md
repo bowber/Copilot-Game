@@ -23,7 +23,7 @@ The live demo is automatically deployed from the `main` branch using GitHub Acti
 This project includes comprehensive testing to ensure code quality and reliability:
 
 ### 🦀 Rust Tests
-- **Unit Tests**: Comprehensive game logic testing (13 test cases)
+- **Unit Tests**: Comprehensive game logic testing (25 test cases)
 - **Physics Tests**: Ball movement, collision detection, boundary checking
 - **Integration Tests**: WASM compilation and exports
 - **Performance Tests**: Energy conservation and physics accuracy
@@ -36,7 +36,7 @@ cargo fmt                     # Format code
 ```
 
 ### ⚡ Frontend Tests  
-- **Component Tests**: UI component rendering and behavior
+- **Component Tests**: UI component rendering and behavior (31 test cases)
 - **Integration Tests**: WASM module loading and game controls
 - **Utility Tests**: Canvas sizing, animation frame handling
 - **Type Safety**: Strict TypeScript checking

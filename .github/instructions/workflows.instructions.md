@@ -33,10 +33,10 @@ All checks must pass for PR approval:
 
 - ✅ Rust formatting (`cargo fmt --check`)
 - ✅ Rust linting (`cargo clippy`)
-- ✅ Rust tests (13 test cases)
+- ✅ Rust tests (25 test cases)
 - ✅ TypeScript checking
 - ✅ Frontend linting (ESLint)
-- ✅ Frontend tests (25 test cases)
+- ✅ Frontend tests (31 test cases)
 - ✅ Production builds
 - ✅ Security audits
 

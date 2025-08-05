@@ -16,7 +16,7 @@ This repository contains a modern web game built with **Rust + WebAssembly** bac
 
 ```bash
 # Quick development (recommended)
-./dev.sh                    # Builds WASM + starts dev server on http://localhost:5173
+./dev.sh                    # Builds WASM + starts dev server on http://localhost:3000
 
 # Manual development
 cd game && wasm-pack build --target web --out-dir pkg
@@ -28,7 +28,7 @@ cd ui && npm install && npm run dev
 # Quality assurance (new!)
 ./lint.sh                   # Run all linting checks
 ./lint.sh fix              # Run linting + auto-fix issues
-./test.sh                   # Run all tests (38 test cases)
+./test.sh                   # Run all tests (56 test cases)
 ```
 
 ### 📋 Mandatory Quality Checks
@@ -48,7 +48,7 @@ Before any commit, these checks MUST pass:
 cd game
 cargo fmt --all --check      # Code formatting
 cargo clippy --all-targets --all-features -- -D warnings  # Linting
-cargo test --verbose         # Unit tests (13 tests)
+cargo test --verbose         # Unit tests (25 tests)
 ```
 
 #### Frontend (UI)
@@ -57,7 +57,7 @@ cd ui
 npm run format:check         # Prettier formatting
 npm run lint                 # ESLint with max 0 warnings
 npm run type-check          # TypeScript type checking
-npm test run                # Vitest tests (25 tests)
+npm test run                # Vitest tests (31 tests)
 ```
 
 ## 🏗️ Architecture Overview
@@ -156,7 +156,7 @@ cd ui && npm run preview   # Test production build
 
 ## 🧪 Testing Strategy
 
-### Rust Tests (13 test cases)
+### Rust Tests (25 test cases)
 - **Unit tests**: Core game logic
 - **Physics tests**: Collision detection, boundary checks
 - **Integration tests**: WASM bindings
@@ -168,7 +168,7 @@ cargo test physics        # Run physics-specific tests
 cargo test collision      # Run collision tests
 ```
 
-### Frontend Tests (25 test cases)
+### Frontend Tests (31 test cases)
 - **Component tests**: UI rendering and interaction
 - **Integration tests**: WASM communication
 - **Utility tests**: Helper functions
@@ -234,11 +234,24 @@ cd ui && npm test -- --reporter=verbose
 
 **Important**: Whenever making changes that affect development workflows, project structure, or documentation accuracy, always update the following files to maintain consistency:
 
+- **`README.md`** - Main project documentation (CRITICAL: Always update when project state changes)
 - **`.github/copilot-instructions.md`** - This main instruction file
 - **`.github/instructions/`** - Specific instruction files for different components:
   - `workflows.instructions.md` - CI/CD pipeline instructions  
   - `ui.instructions.md` - SolidJS frontend instructions
   - `game.instructions.md` - Rust game engine instructions
+
+### 📝 README Maintenance (MANDATORY)
+
+**Always update README.md** when making changes that affect:
+- **Test counts** - Update actual numbers after adding/removing tests
+- **Command examples** - Ensure all commands work and examples are current
+- **Project features** - Add new features, remove obsolete ones
+- **Build processes** - Update setup instructions when build changes
+- **Dependencies** - Update version requirements and installation steps
+- **Development workflows** - Update Quick Start and Development sections
+- **Performance metrics** - Update bundle sizes, test counts, quality metrics
+- **Live demo status** - Ensure deployment links work and reflect current state
 
 ### When to Update Instructions
 
@@ -251,6 +264,18 @@ Update instruction files when changes affect:
 - **Dependencies** - Package manager files, version requirements
 - **Configuration files** - Tooling config, environment setup
 - **CI/CD pipelines** - Workflow changes, quality gates
+
+### 🔄 README Update Checklist
+
+When making ANY code change, verify README.md reflects:
+- [ ] Current test counts (run `./test.sh` to get latest numbers)
+- [ ] Working command examples (test all commands mentioned)
+- [ ] Accurate port numbers and URLs (dev server, live demo)
+- [ ] Up-to-date feature descriptions
+- [ ] Current dependency versions and requirements
+- [ ] Correct build and setup instructions
+- [ ] Valid CI/CD badge links and status
+- [ ] Accurate project metrics (bundle size, performance stats)
 
 ### Update Guidelines
 

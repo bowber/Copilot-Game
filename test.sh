@@ -11,12 +11,12 @@ echo "🧪 Running comprehensive test suite..."
 echo "📦 Running Rust tests..."
 cd game
 cargo test --verbose
-echo "✅ Rust tests: 13 passed"
+echo "✅ Rust tests: 25 passed"
 
 # Frontend tests
 echo "⚡ Running frontend tests..."
 cd ../ui
 npm test run
-echo "✅ Frontend tests: 25 passed"
+echo "✅ Frontend tests: 31 passed"
 
-echo "🎉 All tests passed! Total: 38 test cases"
+echo "🎉 All tests passed! Total: 56 test cases"
