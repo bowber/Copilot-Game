@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@solidjs/testing-library';
+import { render, screen, fireEvent, cleanup } from '@solidjs/testing-library';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import App from './App';
 
@@ -23,7 +23,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   vi.unstubAllGlobals();
+  // Clear any remaining timeouts
+  vi.clearAllTimers();
 });
 
 describe('App Component', () => {

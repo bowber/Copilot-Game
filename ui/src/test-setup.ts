@@ -31,6 +31,7 @@ Object.defineProperty(window, 'wasmBindings', {
 // Mock requestAnimationFrame
 Object.defineProperty(window, 'requestAnimationFrame', {
   value: (callback: (time: number) => void) => {
+    // Use fake timers instead of real setTimeout
     return setTimeout(() => callback(Date.now()), 16);
   },
 });

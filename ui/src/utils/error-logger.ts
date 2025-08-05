@@ -118,15 +118,15 @@ export class ErrorLogger {
 
   private getSystemContext(): SystemContext {
     return {
-      userAgent: navigator.userAgent,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'test-environment',
       screen: {
-        width: screen.width,
-        height: screen.height,
-        devicePixelRatio: window.devicePixelRatio || 1,
+        width: typeof screen !== 'undefined' ? screen.width : 1024,
+        height: typeof screen !== 'undefined' ? screen.height : 768,
+        devicePixelRatio: typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1,
       },
       viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+        height: typeof window !== 'undefined' ? window.innerHeight : 768,
       },
       timestamp: new Date().toISOString(),
       url: window.location.href,
