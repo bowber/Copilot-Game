@@ -51,6 +51,9 @@ export class ErrorLogger {
   }
 
   private setupGlobalErrorHandling(): void {
+    // Only setup error handling in browser environment
+    if (typeof window === 'undefined') return;
+
     // Capture unhandled errors
     window.addEventListener('error', event => {
       this.logError({
@@ -129,7 +132,7 @@ export class ErrorLogger {
         height: typeof window !== 'undefined' ? window.innerHeight : 768,
       },
       timestamp: new Date().toISOString(),
-      url: window.location.href,
+      url: typeof window !== 'undefined' ? window.location.href : 'test-environment',
     };
   }
 
@@ -163,12 +166,14 @@ export class ErrorLogger {
       this.errors = this.errors.slice(0, this.maxErrors);
     }
 
-    // Emit custom event for toast notifications
-    window.dispatchEvent(
-      new CustomEvent('error-logged', {
-        detail: errorDetails,
-      })
-    );
+    // Emit custom event for toast notifications (only in browser)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('error-logged', {
+          detail: errorDetails,
+        })
+      );
+    }
   }
 
   public logManualError(message: string, gameState?: GameContext): void {

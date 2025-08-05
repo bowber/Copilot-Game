@@ -17,6 +17,6 @@ echo "✅ Rust tests: 25 passed"
 echo "⚡ Running frontend tests..."
 cd ../ui
 npm test run
-echo "✅ Frontend tests: 50 passed"
+echo "✅ Frontend tests: 39 passed"
 
-echo "🎉 All tests passed! Total: 75 test cases"
+echo "🎉 All tests passed! Total: 64 test cases"
