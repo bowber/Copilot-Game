@@ -205,6 +205,20 @@ export function start_game(canvas_id) {
     return Game.__wrap(ret[0]);
 }
 
+/**
+ * Represents the different screens/states of the RPG game
+ * @enum {0 | 1 | 2 | 3 | 4 | 5 | 6}
+ */
+export const GameScreen = Object.freeze({
+    LoginScreen: 0, "0": "LoginScreen",
+    ServerSelection: 1, "1": "ServerSelection",
+    MainMenu: 2, "2": "MainMenu",
+    GameHUD: 3, "3": "GameHUD",
+    Inventory: 4, "4": "Inventory",
+    Shop: 5, "5": "Shop",
+    HelpModal: 6, "6": "HelpModal",
+});
+
 const GameFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_game_free(ptr >>> 0, 1));
@@ -249,6 +263,52 @@ export class Game {
     }
     render() {
         wasm.game_render(this.__wbg_ptr);
+    }
+    /**
+     * Handle input events from the frontend
+     * @param {string} event_type
+     * @param {string} data
+     * @returns {boolean}
+     */
+    handle_input(event_type, data) {
+        const ptr0 = passStringToWasm0(event_type, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(data, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.game_handle_input(this.__wbg_ptr, ptr0, len0, ptr1, len1);
+        return ret !== 0;
+    }
+    /**
+     * Get current game screen for the frontend
+     * @returns {string}
+     */
+    get_current_screen() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.game_get_current_screen(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * Get current game state as JSON for the frontend
+     * @returns {string}
+     */
+    get_game_state() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.game_get_game_state(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
     }
     /**
      * @param {number} width
@@ -413,6 +473,12 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_setheight_da683a33fa99843c = function(arg0, arg1) {
         arg0.height = arg1 >>> 0;
     };
+    imports.wbg.__wbg_setlineWidth_ec730c524f09baa9 = function(arg0, arg1) {
+        arg0.lineWidth = arg1;
+    };
+    imports.wbg.__wbg_setstrokeStyle_88eaacb0e9a0c645 = function(arg0, arg1) {
+        arg0.strokeStyle = arg1;
+    };
     imports.wbg.__wbg_settextAlign_e516a64e49622a08 = function(arg0, arg1, arg2) {
         arg0.textAlign = getStringFromWasm0(arg1, arg2);
     };
@@ -441,6 +507,9 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_static_accessor_WINDOW_5de37043a91a9c40 = function() {
         const ret = typeof window === 'undefined' ? null : window;
         return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
+    };
+    imports.wbg.__wbg_strokeRect_bfa0a2d3cd838033 = function(arg0, arg1, arg2, arg3, arg4) {
+        arg0.strokeRect(arg1, arg2, arg3, arg4);
     };
     imports.wbg.__wbg_width_5dde457d606ba683 = function(arg0) {
         const ret = arg0.width;
