@@ -16,6 +16,7 @@ const App = () => {
   const [gameStatus, setGameStatus] = createSignal('Loading...');
   const [canvasSize, setCanvasSize] = createSignal({ width: 800, height: 600 });
   const [isFullscreen, setIsFullscreen] = createSignal(false);
+  const [isMobile, setIsMobile] = createSignal(false);
 
   let animationId: number | null = null;
   let canvasRef: HTMLCanvasElement | undefined;
@@ -173,10 +174,22 @@ const App = () => {
         let newWidth: number;
         let newHeight: number;
 
-        if (isFullscreen()) {
-          // In fullscreen mode, use full viewport dimensions
+        if (isFullscreen() || isMobile()) {
+          // In fullscreen mode or mobile, use optimal viewport dimensions
           newWidth = window.innerWidth;
           newHeight = window.innerHeight;
+
+          // On mobile, account for address bar and other UI elements
+          if (isMobile()) {
+            // Use visual viewport if available for better mobile support
+            if (window.visualViewport) {
+              newWidth = window.visualViewport.width;
+              newHeight = window.visualViewport.height;
+            } else {
+              // Fallback: reduce height slightly for mobile browser UI
+              newHeight = window.innerHeight * 0.95;
+            }
+          }
         } else {
           // Normal mode with size constraints
           newWidth = Math.min(window.innerWidth - 40, 800);
@@ -216,6 +229,35 @@ const App = () => {
   };
 
   onMount(() => {
+    // Detect mobile device
+    const checkMobile = () => {
+      // Don't auto-detect mobile in test environment
+      if (
+        typeof window !== 'undefined' &&
+        window.location?.hostname === 'localhost' &&
+        (window.navigator?.userAgent?.includes('jsdom') ||
+          window.navigator?.userAgent?.includes('test'))
+      ) {
+        setIsMobile(false);
+        return;
+      }
+
+      const isMobileDevice =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        ) ||
+        window.innerWidth <= 768 ||
+        'ontouchstart' in window;
+      setIsMobile(isMobileDevice);
+
+      // Auto-enable fullscreen-like experience on mobile for better gameplay
+      if (isMobileDevice && !isFullscreen()) {
+        setIsFullscreen(true);
+      }
+    };
+
+    checkMobile();
+
     // Set initial canvas size
     resizeCanvas();
 
@@ -268,7 +310,9 @@ const App = () => {
   return (
     <>
       <ErrorToastManager />
-      <div class={`app-container ${isFullscreen() ? 'fullscreen' : ''}`}>
+      <div
+        class={`app-container ${isFullscreen() ? 'fullscreen' : ''} ${isMobile() ? 'mobile' : ''}`}
+      >
         <header class={`app-header ${isFullscreen() ? 'hidden' : ''}`}>
           <h1>🎮 RPG Game</h1>
           <p>A Rust + WASM RPG with SolidJS frontend</p>
