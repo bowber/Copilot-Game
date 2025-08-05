@@ -1,23 +1,11 @@
 import { createSignal, onMount, onCleanup } from 'solid-js';
 import { ErrorToastManager } from './components/ErrorToast';
 import { errorLogger } from './utils/error-logger';
+import GameUI from './components/GameUI';
+import { EnhancedGameInstance, WasmBindings, InputManager, GameStateManager } from './components/GameTypes';
+import './components/GameUI.css';
 
-// Type definitions for WASM bindings
-interface GameInstance {
-  update(): void;
-  render(): void;
-  resize(width: number, height: number): void;
-  reset(): void;
-  get_ball_position(): { x: number; y: number };
-  get_ball_velocity(): { x: number; y: number };
-}
-
-interface WasmBindings {
-  default(): Promise<void>;
-  start_game(canvasId: string): GameInstance;
-}
-
-// Extend window interface for our WASM module
+// Extend window interface for our enhanced WASM module
 declare global {
   interface Window {
     wasmBindings: WasmBindings;
@@ -25,15 +13,14 @@ declare global {
 }
 
 const App = () => {
-  const [gameInstance, setGameInstance] = createSignal<GameInstance | null>(
-    null
-  );
+  const [gameInstance, setGameInstance] = createSignal<EnhancedGameInstance | null>(null);
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameStatus, setGameStatus] = createSignal('Loading...');
   const [canvasSize, setCanvasSize] = createSignal({ width: 800, height: 600 });
 
   let animationId: number | null = null;
   let canvasRef: HTMLCanvasElement | undefined;
+  let inputManager: InputManager | undefined;
 
   const initializeGame = async () => {
     try {
@@ -47,8 +34,7 @@ const App = () => {
       }
 
       if (!window.wasmBindings) {
-        const errorMsg =
-          'WASM module failed to load - check network connection';
+        const errorMsg = 'WASM module failed to load - check network connection';
         throw new Error(errorMsg);
       }
 
@@ -58,21 +44,26 @@ const App = () => {
       await window.wasmBindings.default();
 
       // eslint-disable-next-line no-console
-      console.log('WASM module loaded successfully');
+      console.log('Enhanced WASM module loaded successfully');
       setGameStatus('Creating game instance...');
 
       if (canvasRef) {
-        // Create the game instance
+        // Create the enhanced game instance
         const game = window.wasmBindings.start_game('game-canvas');
         setGameInstance(game);
         setGameStatus('Game ready!');
+
+        // Setup input handling
+        if (inputManager) {
+          inputManager.setGameInstance(game);
+          inputManager.attachToCanvas(canvasRef);
+        }
 
         // Start the game loop
         startGameLoop();
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
       // Log error with game context
       errorLogger.logGameError(errorMessage, {
@@ -99,8 +90,7 @@ const App = () => {
           animationId = requestAnimationFrame(gameLoop);
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Game loop error';
+        const errorMessage = error instanceof Error ? error.message : 'Game loop error';
 
         // Log error with game context
         errorLogger.logGameError(`Game loop error: ${errorMessage}`, {
@@ -143,8 +133,7 @@ const App = () => {
         instance.resize(newWidth, newHeight);
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Canvas resize error';
+      const errorMessage = error instanceof Error ? error.message : 'Canvas resize error';
 
       // Log error with game context
       errorLogger.logGameError(`Canvas resize error: ${errorMessage}`, {
@@ -155,45 +144,64 @@ const App = () => {
     }
   };
 
+  const handleCanvasReady = (canvas: HTMLCanvasElement) => {
+    canvasRef = canvas;
+    
+    // Initialize input manager and attach to canvas
+    if (!inputManager) {
+      inputManager = new InputManager();
+    }
+    
+    // Focus canvas for keyboard input
+    canvas.focus();
+    
+    // Initialize the game after canvas is ready
+    initializeGame();
+  };
+
   onMount(() => {
     // Set initial canvas size
     resizeCanvas();
 
     // Add resize listener
     window.addEventListener('resize', resizeCanvas);
-
-    // Initialize the game
-    initializeGame();
   });
 
   onCleanup(() => {
     stopGame();
     window.removeEventListener('resize', resizeCanvas);
-    // Note: errorLogger cleanup is handled globally, not per component
+    
+    // Cleanup input manager
+    if (inputManager && canvasRef) {
+      inputManager.detachFromCanvas(canvasRef);
+      inputManager.cleanup();
+    }
   });
 
   return (
     <>
       <ErrorToastManager />
-      <div class="container">
-        <header>
-          <h1>🎮 Copilot Game</h1>
-          <p>A Rust + WASM game with SolidJS frontend</p>
+      <div class="app-container">
+        <header class="app-header">
+          <h1>🎮 RPG Game</h1>
+          <p>A Rust + WASM RPG with SolidJS frontend</p>
+          <div class="status">Status: {gameStatus()}</div>
         </header>
 
-        <div class="status">Status: {gameStatus()}</div>
+        {/* Main Game UI with state management */}
+        <GameStateManager gameInstance={gameInstance()}>
+          {(gameState, currentScreen) => (
+            <GameUI
+              gameState={gameState}
+              currentScreen={currentScreen}
+              onCanvasReady={handleCanvasReady}
+              canvasSize={canvasSize()}
+            />
+          )}
+        </GameStateManager>
 
-        <div class="game-container">
-          <canvas
-            ref={canvasRef}
-            id="game-canvas"
-            class="game-canvas"
-            width={canvasSize().width}
-            height={canvasSize().height}
-          />
-        </div>
-
-        <div class="controls">
+        {/* Development Controls */}
+        <div class="dev-controls">
           <button
             class="button"
             onClick={resumeGame}
@@ -201,7 +209,11 @@ const App = () => {
           >
             Start/Resume
           </button>
-          <button class="button" onClick={stopGame} disabled={!isGameRunning()}>
+          <button 
+            class="button" 
+            onClick={stopGame} 
+            disabled={!isGameRunning()}
+          >
             Pause
           </button>
           <button
@@ -214,7 +226,7 @@ const App = () => {
 
           {/* Test button for demonstrating error reporting */}
           <button
-            class="button"
+            class="button test-button"
             onClick={() => {
               errorLogger.logManualError(
                 'This is a test error to demonstrate the error reporting system',
@@ -225,69 +237,89 @@ const App = () => {
                 }
               );
             }}
-            style={{
-              'background-color': '#ff6b6b',
-              'margin-left': '20px',
-            }}
           >
             🧪 Test Error
           </button>
         </div>
 
         <div class="info">
-          <h3>About This Project</h3>
+          <h3>About This Enhanced RPG</h3>
           <p>
-            This is a demonstration of a modern web game architecture using:
+            This is a demonstration of a modern RPG game architecture featuring:
           </p>
 
           <div class="architecture">
             <div class="arch-box">
-              <h4>🦀 Rust + WASM Backend</h4>
+              <h4>🦀 Enhanced Rust + WASM Backend</h4>
               <ul>
-                <li>Game logic written in Rust</li>
-                <li>Compiled to WebAssembly</li>
+                <li>Multi-screen game state management</li>
+                <li>Comprehensive input handling</li>
+                <li>RPG game logic and flow</li>
                 <li>High-performance graphics</li>
-                <li>Canvas 2D rendering</li>
+                <li>Canvas 2D rendering (wgpu ready)</li>
               </ul>
             </div>
 
             <div class="arch-box">
-              <h4>⚡ SolidJS Frontend</h4>
+              <h4>⚡ Enhanced SolidJS Frontend</h4>
               <ul>
-                <li>Reactive UI framework</li>
+                <li>Reactive UI state management</li>
+                <li>Screen-specific overlays</li>
+                <li>Input event handling</li>
                 <li>TypeScript support</li>
-                <li>Vite build system</li>
                 <li>Modern web development</li>
               </ul>
             </div>
           </div>
 
-          <h3>Game Features</h3>
+          <h3>RPG Game Features</h3>
           <ul>
-            <li>Smooth 60 FPS animation</li>
-            <li>Responsive canvas that adapts to screen size</li>
-            <li>Physics-based ball movement with collision detection</li>
-            <li>Real-time rendering from Rust to HTML5 Canvas</li>
-            <li>Game state management (play/pause/restart)</li>
-            <li>
-              🚨 <strong>Enhanced error reporting and debugging</strong>
-            </li>
+            <li>📱 Multiple game screens (Login, Server Selection, Main Menu, Game World)</li>
+            <li>🎮 Comprehensive input system (WASD/Arrows, Mouse, Touch)</li>
+            <li>🎒 Inventory and Shop systems</li>
+            <li>❓ In-game help system</li>
+            <li>🌍 Region selection for multiplayer preparation</li>
+            <li>👤 Player character with movement</li>
+            <li>🎯 Pixel-perfect RPG-style graphics</li>
+            <li>🚨 Enhanced error reporting and debugging</li>
           </ul>
 
-          <h3>Technical Details</h3>
+          <h3>Controls</h3>
+          <div class="controls-grid">
+            <div class="control-item">
+              <strong>WASD / Arrow Keys:</strong> Move character
+            </div>
+            <div class="control-item">
+              <strong>I:</strong> Toggle Inventory
+            </div>
+            <div class="control-item">
+              <strong>T:</strong> Toggle Shop
+            </div>
+            <div class="control-item">
+              <strong>H / F1:</strong> Toggle Help
+            </div>
+            <div class="control-item">
+              <strong>ESC:</strong> Go back/Close panels
+            </div>
+            <div class="control-item">
+              <strong>Enter:</strong> Confirm/Continue
+            </div>
+            <div class="control-item">
+              <strong>Mouse/Touch:</strong> Interact with UI
+            </div>
+          </div>
+
+          <h3>Technical Architecture</h3>
           <p>
-            The game engine is written entirely in Rust and compiled to
-            WebAssembly. The SolidJS frontend provides the UI layer and manages
-            the game lifecycle. Communication between Rust and JavaScript
-            happens through wasm-bindgen bindings, allowing for efficient data
-            transfer and function calls.
+            The enhanced game engine is written in Rust with comprehensive state management
+            and compiled to WebAssembly. The SolidJS frontend provides reactive UI layers
+            for each game screen. Communication between Rust and JavaScript uses enhanced
+            wasm-bindgen bindings with JSON state serialization for efficient data transfer.
           </p>
 
           <p>
-            <strong>🐛 Bug Reporting:</strong> This game now includes
-            comprehensive error reporting. If you encounter any issues, error
-            details will appear as toast notifications with detailed technical
-            information that can be copied to help developers diagnose problems.
+            <strong>🐛 Bug Reporting:</strong> This enhanced RPG includes comprehensive
+            error reporting with detailed technical information for developers.
           </p>
         </div>
       </div>

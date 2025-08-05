@@ -30,9 +30,9 @@ describe('App Component', () => {
   it('renders the game title and description', () => {
     render(() => <App />);
 
-    expect(screen.getByText('🎮 Copilot Game')).toBeInTheDocument();
+    expect(screen.getByText('🎮 RPG Game')).toBeInTheDocument();
     expect(
-      screen.getByText('A Rust + WASM game with SolidJS frontend')
+      screen.getByText('A Rust + WASM RPG with SolidJS frontend')
     ).toBeInTheDocument();
   });
 
@@ -61,26 +61,27 @@ describe('App Component', () => {
   it('renders architecture information', () => {
     render(() => <App />);
 
-    expect(screen.getByText('🦀 Rust + WASM Backend')).toBeInTheDocument();
-    expect(screen.getByText('⚡ SolidJS Frontend')).toBeInTheDocument();
-    expect(screen.getByText('Game logic written in Rust')).toBeInTheDocument();
-    expect(screen.getByText('Reactive UI framework')).toBeInTheDocument();
+    expect(screen.getByText(/Enhanced Rust \+ WASM Backend/)).toBeInTheDocument();
+    expect(screen.getByText(/Enhanced SolidJS Frontend/)).toBeInTheDocument();
+    expect(screen.getByText('Multi-screen game state management')).toBeInTheDocument();
+    expect(screen.getByText('Reactive UI state management')).toBeInTheDocument();
   });
 
   it('renders game features list', () => {
     render(() => <App />);
 
-    expect(screen.getByText('Smooth 60 FPS animation')).toBeInTheDocument();
+    expect(screen.getByText(/Multiple game screens/)).toBeInTheDocument();
     expect(
-      screen.getByText('Physics-based ball movement with collision detection')
+      screen.getByText(/Comprehensive input system/)
     ).toBeInTheDocument();
+    expect(screen.getByText(/Inventory and Shop systems/)).toBeInTheDocument();
   });
 
   it('shows technical details', () => {
     render(() => <App />);
 
     expect(
-      screen.getByText(/The game engine is written entirely in Rust/)
+      screen.getByText(/The enhanced game engine is written in Rust/)
     ).toBeInTheDocument();
     expect(screen.getByText(/wasm-bindgen bindings/)).toBeInTheDocument();
   });
@@ -154,19 +155,19 @@ describe('Component Structure', () => {
     // Should have header
     expect(screen.getByRole('banner')).toBeInTheDocument();
 
-    // Should have main content areas
-    expect(screen.getByText('About This Project')).toBeInTheDocument();
-    expect(screen.getByText('Game Features')).toBeInTheDocument();
-    expect(screen.getByText('Technical Details')).toBeInTheDocument();
+    // Should have main content areas (updated for new content)
+    expect(screen.getByText('About This Enhanced RPG')).toBeInTheDocument();
+    expect(screen.getByText('RPG Game Features')).toBeInTheDocument();
+    expect(screen.getByText('Technical Architecture')).toBeInTheDocument();
   });
 
   it('has proper styling classes', () => {
     const { container } = render(() => <App />);
 
     // The first child is now the ErrorToastManager, second child is the main container
-    expect(container.children[1]).toHaveClass('container');
+    expect(container.children[1]).toHaveClass('app-container');
     expect(screen.getByText('Start/Resume').parentElement).toHaveClass(
-      'controls'
+      'dev-controls'
     );
   });
 });
