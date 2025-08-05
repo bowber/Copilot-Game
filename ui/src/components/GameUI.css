@@ -10,6 +10,14 @@
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
 }
 
+/* Mobile Game UI */
+.app-container.mobile .game-ui {
+  min-height: 100vh;
+  min-height: 100svh;
+  align-items: stretch; /* Stretch to fill on mobile */
+  justify-content: stretch;
+}
+
 /* Fullscreen Game UI */
 .app-container.fullscreen .game-ui {
   position: fixed;
@@ -28,6 +36,11 @@
   box-shadow: 0 0 20px rgba(79, 195, 247, 0.3);
   cursor: crosshair;
   outline: none;
+  /* Touch optimizations */
+  touch-action: none; /* Prevent default touch behaviors on canvas */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .game-canvas:focus {
@@ -42,6 +55,18 @@
   box-shadow: none;
   width: 100vw;
   height: 100vh;
+}
+
+/* Mobile canvas optimization */
+.app-container.mobile .game-canvas {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  max-width: none;
+  max-height: none;
 }
 
 /* Screen Overlay Base */
@@ -500,6 +525,7 @@
   .game-canvas {
     max-width: 100vw;
     max-height: 60vh;
+    border-radius: 4px; /* Smaller radius on mobile */
   }
 
   .modal-panel {
@@ -521,6 +547,26 @@
     flex-direction: column;
     gap: 0.5rem;
   }
+
+  /* Mobile touch optimizations */
+  .login-overlay,
+  .server-selection-overlay,
+  .main-menu-overlay {
+    padding: 1rem;
+  }
+
+  .login-ui,
+  .server-selection-ui,
+  .main-menu-ui {
+    padding: 1.5rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  /* Make overlays more touch-friendly */
+  .welcome-text p {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -535,9 +581,80 @@
 
   .modal-panel {
     padding: 1rem;
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
   }
 
   .inventory-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Mobile-first game canvas sizing */
+  .game-canvas {
+    max-width: 100vw;
+    max-height: 70vh; /* Give more space on small screens */
+    border: 1px solid #4fc3f7; /* Thinner border on mobile */
+  }
+
+  /* Optimize game UI for mobile */
+  .game-ui {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  /* Better touch targets for mobile */
+  .login-ui,
+  .server-selection-ui,
+  .main-menu-ui {
+    padding: 1rem;
+    touch-action: manipulation;
+  }
+
+  .welcome-text p {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  /* Hide some UI elements to focus on game on very small screens */
+  .controls-hint {
+    display: none; /* Hide control hints on very small screens */
+  }
+
+  .minimap-placeholder {
+    display: none; /* Hide minimap on very small screens */
+  }
+}
+
+/* Touch device specific optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .game-canvas {
+    cursor: default; /* Remove crosshair cursor on touch devices */
+  }
+
+  .item-slot:hover,
+  .shop-item:hover {
+    /* Disable hover effects on touch devices, add active states instead */
+    background: rgba(79, 195, 247, 0.1);
+    border-color: #4fc3f7;
+  }
+
+  .item-slot:active {
+    background: rgba(79, 195, 247, 0.2);
+    border-color: #81d4fa;
+  }
+
+  .shop-item:active {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffecb3;
+  }
+
+  /* Make touch targets larger */
+  .login-ui,
+  .server-selection-ui,
+  .main-menu-ui {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 }

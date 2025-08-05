@@ -101,11 +101,35 @@ export class InputManager {
       }
     };
 
+    const handleTouchStart = (event: TouchEvent) => {
+      if (this.gameInstance && event.touches.length > 0) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        const rect = (event.target as HTMLElement).getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        const coords = JSON.stringify([x, y]);
+        // Send both touchstart and touch events to ensure game responds
+        this.gameInstance.handle_input('touchstart', coords);
+        this.gameInstance.handle_input('touch', coords);
+      }
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (this.gameInstance) {
+        event.preventDefault();
+        // Send touchend event to complete the interaction
+        this.gameInstance.handle_input('touchend', '[]');
+      }
+    };
+
     // Store listeners for cleanup
     this.keyListeners.set('keydown', handleKeyDown);
     this.keyListeners.set('keyup', handleKeyUp);
     this.mouseListeners.set('click', handleMouseClick);
-    this.touchListeners.set('touchstart', handleTouch);
+    this.touchListeners.set('touchstart', handleTouchStart);
+    this.touchListeners.set('touchmove', handleTouch);
+    this.touchListeners.set('touchend', handleTouchEnd);
   }
 
   attachToCanvas(canvas: HTMLCanvasElement) {
