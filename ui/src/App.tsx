@@ -8,6 +8,7 @@ import {
   GameStateManager,
 } from './components/GameTypes';
 import './components/GameUI.css';
+import './components/TestUI.css';
 
 const App = () => {
   const [gameInstance, setGameInstance] =
@@ -319,19 +320,32 @@ const App = () => {
           <div class="status">Status: {gameStatus()}</div>
         </header>
 
+        {/* TEST OVERLAY - Always show */}
+        <div class="test-ui-overlay">
+          <div class="test-message">
+            SolidJS UI is working! Game instance: {gameInstance() ? 'loaded' : 'null'}
+          </div>
+        </div>
+
         {/* Main Game UI with state management */}
         <GameStateManager gameInstance={gameInstance()}>
-          {(gameState, currentScreen) => (
-            <GameUI
-              gameState={gameState}
-              currentScreen={currentScreen}
-              onCanvasReady={handleCanvasReady}
-              canvasSize={canvasSize()}
-              inputManager={inputManager}
-              isMobile={isMobile()}
-              gameInstance={gameInstance()}
-            />
-          )}
+          {(gameState, currentScreen) => {
+            // Debug logging
+            console.log('GameStateManager rendering:', { gameState, currentScreen });
+            console.log('Game instance exists:', !!gameInstance());
+            
+            return (
+              <GameUI
+                gameState={gameState}
+                currentScreen={currentScreen}
+                onCanvasReady={handleCanvasReady}
+                canvasSize={canvasSize()}
+                inputManager={inputManager}
+                isMobile={isMobile()}
+                gameInstance={gameInstance()}
+              />
+            );
+          }}
         </GameStateManager>
 
         {/* Development Controls */}

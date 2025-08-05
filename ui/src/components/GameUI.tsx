@@ -42,11 +42,20 @@ export const GameUI: Component<{
 
       {/* Screen-specific UI overlays */}
       <Show when={props.currentScreen && props.gameState}>
-        <ScreenSelector
-          screen={props.currentScreen!}
-          gameState={props.gameState!}
-          gameInstance={props.gameInstance}
-        />
+        {() => {
+          console.log('GameUI Show condition triggered:', { 
+            currentScreen: props.currentScreen, 
+            gameState: props.gameState,
+            gameInstance: !!props.gameInstance 
+          });
+          return (
+            <ScreenSelector
+              screen={props.currentScreen!}
+              gameState={props.gameState!}
+              gameInstance={props.gameInstance}
+            />
+          );
+        }}
       </Show>
 
       {/* Mobile Controls - only show on GameHUD screen when mobile */}
