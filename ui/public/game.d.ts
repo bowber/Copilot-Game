@@ -8,6 +8,9 @@ export class Game {
   update(): void;
   render(): void;
   resize(width: number, height: number): void;
+  reset(): void;
+  get_ball_position(): Float64Array;
+  get_ball_velocity(): Float64Array;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -19,6 +22,9 @@ export interface InitOutput {
   readonly game_update: (a: number) => void;
   readonly game_render: (a: number) => void;
   readonly game_resize: (a: number, b: number, c: number) => void;
+  readonly game_reset: (a: number) => void;
+  readonly game_get_ball_position: (a: number) => [number, number];
+  readonly game_get_ball_velocity: (a: number) => [number, number];
   readonly main: () => void;
   readonly start_game: (a: number, b: number) => [number, number, number];
   readonly __wbindgen_exn_store: (a: number) => void;
