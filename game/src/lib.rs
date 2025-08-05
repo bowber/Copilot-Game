@@ -168,18 +168,29 @@ impl Game {
                     let input_event = self.input_handler.handle_mouse_click(coords.0, coords.1);
                     self.process_input_event(input_event)
                 } else {
+                    console::log_1(&format!("Failed to parse mouse coordinates: {data}").into());
                     false
                 }
             }
-            "touch" => {
+            "touch" | "touchstart" => {
+                // Handle both touch and touchstart events the same way
                 if let Ok(coords) = serde_json::from_str::<(f64, f64)>(data) {
                     let input_event = self.input_handler.handle_touch(coords.0, coords.1);
                     self.process_input_event(input_event)
                 } else {
+                    console::log_1(&format!("Failed to parse touch coordinates: {data}").into());
                     false
                 }
             }
-            _ => false,
+            "touchend" => {
+                // TouchEnd doesn't need coordinate processing, just acknowledge it
+                console::log_1(&"Touch ended".into());
+                false
+            }
+            _ => {
+                console::log_1(&format!("Unknown input event type: {event_type}").into());
+                false
+            }
         }
     }
 
@@ -248,6 +259,11 @@ impl Game {
                 self.state.transition_to(GameScreen::ServerSelection);
                 true
             }
+            (GameScreen::LoginScreen, InputEvent::TouchTap { .. }) => {
+                self.state.set_player_name("Player".to_string());
+                self.state.transition_to(GameScreen::ServerSelection);
+                true
+            }
 
             // Server Selection
             (GameScreen::ServerSelection, InputEvent::Enter) => {
@@ -270,6 +286,19 @@ impl Game {
                 self.state.transition_to(GameScreen::MainMenu);
                 true
             }
+            (GameScreen::ServerSelection, InputEvent::TouchTap { x: _, y }) => {
+                // Simple region selection based on touch position (same logic as mouse)
+                let region = if y < self.height / 3.0 {
+                    Region::EU
+                } else if y < 2.0 * self.height / 3.0 {
+                    Region::Asia
+                } else {
+                    Region::Vietnam
+                };
+                self.state.set_region(region);
+                self.state.transition_to(GameScreen::MainMenu);
+                true
+            }
 
             // Main Menu
             (GameScreen::MainMenu, InputEvent::Enter) => {
@@ -277,6 +306,10 @@ impl Game {
                 true
             }
             (GameScreen::MainMenu, InputEvent::MouseClick { .. }) => {
+                self.state.transition_to(GameScreen::GameHUD);
+                true
+            }
+            (GameScreen::MainMenu, InputEvent::TouchTap { .. }) => {
                 self.state.transition_to(GameScreen::GameHUD);
                 true
             }
