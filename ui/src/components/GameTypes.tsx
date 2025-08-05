@@ -1,4 +1,5 @@
 import { Component, createSignal, onMount, onCleanup, JSX } from 'solid-js';
+import { errorLogger } from '../utils/error-logger';
 
 // Enhanced interface for the new RPG game backend
 export interface EnhancedGameInstance {
@@ -64,16 +65,28 @@ export class InputManager {
     // Keyboard event handlers
     const handleKeyDown = (event: KeyboardEvent) => {
       if (this.gameInstance) {
-        const handled = this.gameInstance.handle_input('keydown', event.code);
-        if (handled) {
-          event.preventDefault();
+        try {
+          const handled = this.gameInstance.handle_input('keydown', event.code);
+          if (handled) {
+            event.preventDefault();
+          }
+        } catch (error) {
+          errorLogger.logGameError('Error handling keydown event', {
+            error: String(error),
+          });
         }
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (this.gameInstance) {
-        this.gameInstance.handle_input('keyup', event.code);
+        try {
+          this.gameInstance.handle_input('keyup', event.code);
+        } catch (error) {
+          errorLogger.logGameError('Error handling keyup event', {
+            error: String(error),
+          });
+        }
       }
     };
 
@@ -84,7 +97,13 @@ export class InputManager {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         const coords = JSON.stringify([x, y]);
-        this.gameInstance.handle_input('mouseclick', coords);
+        try {
+          this.gameInstance.handle_input('mouseclick', coords);
+        } catch (error) {
+          errorLogger.logGameError('Error handling mouse click event', {
+            error: String(error),
+          });
+        }
       }
     };
 
@@ -97,7 +116,13 @@ export class InputManager {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         const coords = JSON.stringify([x, y]);
-        this.gameInstance.handle_input('touch', coords);
+        try {
+          this.gameInstance.handle_input('touch', coords);
+        } catch (error) {
+          errorLogger.logGameError('Error handling touch event', {
+            error: String(error),
+          });
+        }
       }
     };
 
@@ -109,17 +134,29 @@ export class InputManager {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         const coords = JSON.stringify([x, y]);
-        // Send both touchstart and touch events to ensure game responds
-        this.gameInstance.handle_input('touchstart', coords);
-        this.gameInstance.handle_input('touch', coords);
+        try {
+          // Send both touchstart and touch events to ensure game responds
+          this.gameInstance.handle_input('touchstart', coords);
+          this.gameInstance.handle_input('touch', coords);
+        } catch (error) {
+          errorLogger.logGameError('Error handling touchstart event', {
+            error: String(error),
+          });
+        }
       }
     };
 
     const handleTouchEnd = (event: TouchEvent) => {
       if (this.gameInstance) {
         event.preventDefault();
-        // Send touchend event to complete the interaction
-        this.gameInstance.handle_input('touchend', '[]');
+        try {
+          // Send touchend event to complete the interaction
+          this.gameInstance.handle_input('touchend', '[]');
+        } catch (error) {
+          errorLogger.logGameError('Error handling touchend event', {
+            error: String(error),
+          });
+        }
       }
     };
 
