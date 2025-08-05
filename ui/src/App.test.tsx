@@ -163,7 +163,8 @@ describe('Component Structure', () => {
   it('has proper styling classes', () => {
     const { container } = render(() => <App />);
 
-    expect(container.firstChild).toHaveClass('container');
+    // The first child is now the ErrorToastManager, second child is the main container
+    expect(container.children[1]).toHaveClass('container');
     expect(screen.getByText('Start/Resume').parentElement).toHaveClass(
       'controls'
     );
