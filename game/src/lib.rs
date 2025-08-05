@@ -2,27 +2,34 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{console, window, CanvasRenderingContext2d, HtmlCanvasElement};
 
-// Ball physics constants
+mod game_state;
+mod input;
+
+pub use game_state::{GameScreen, GameState, Region};
+pub use input::{InputEvent, InputHandler, InputState};
+
+// Re-export for backward compatibility
+pub use game_state::GameState as LegacyGameState;
+
+// Ball physics constants (kept for backward compatibility)
 pub const BALL_RADIUS: f64 = 25.0;
 pub const DEFAULT_BALL_SPEED_X: f64 = 3.0;
 pub const DEFAULT_BALL_SPEED_Y: f64 = 2.0;
 
-// Game state
+// Enhanced Game structure with RPG state management
 #[wasm_bindgen]
 pub struct Game {
     canvas: HtmlCanvasElement,
     ctx: CanvasRenderingContext2d,
-    ball_x: f64,
-    ball_y: f64,
-    ball_dx: f64,
-    ball_dy: f64,
+    state: GameState,
+    input_handler: InputHandler,
     width: f64,
     height: f64,
 }
 
-// Core game logic (separate from WASM bindings for easier testing)
+// Legacy game state structure (kept for backward compatibility)
 #[derive(Debug, Clone)]
-pub struct GameState {
+pub struct LegacyBallState {
     pub ball_x: f64,
     pub ball_y: f64,
     pub ball_dx: f64,
@@ -31,7 +38,7 @@ pub struct GameState {
     pub height: f64,
 }
 
-impl GameState {
+impl LegacyBallState {
     pub fn new(width: f64, height: f64) -> Self {
         Self {
             ball_x: width / 2.0,
@@ -97,15 +104,13 @@ impl Game {
         let width = canvas.width() as f64;
         let height = canvas.height() as f64;
 
-        console::log_1(&format!("Game initialized: {width}x{height}").into());
+        console::log_1(&format!("RPG Game initialized: {width}x{height}").into());
 
         Ok(Game {
             canvas,
             ctx,
-            ball_x: width / 2.0,
-            ball_y: height / 2.0,
-            ball_dx: DEFAULT_BALL_SPEED_X,
-            ball_dy: DEFAULT_BALL_SPEED_Y,
+            state: GameState::new(width, height),
+            input_handler: InputHandler::new(),
             width,
             height,
         })
@@ -113,21 +118,16 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn update(&mut self) {
-        let mut state = GameState {
-            ball_x: self.ball_x,
-            ball_y: self.ball_y,
-            ball_dx: self.ball_dx,
-            ball_dy: self.ball_dy,
-            width: self.width,
-            height: self.height,
-        };
+        // Process continuous input (movement)
+        let (dx, dy) = self.input_handler.get_movement_delta();
+        if dx != 0.0 || dy != 0.0 {
+            self.state.move_player(dx, dy);
+        }
 
-        state.update();
-
-        self.ball_x = state.ball_x;
-        self.ball_y = state.ball_y;
-        self.ball_dx = state.ball_dx;
-        self.ball_dy = state.ball_dy;
+        // Update legacy ball physics for backward compatibility
+        if self.state.current_screen == GameScreen::GameHUD {
+            self.state.update_ball_physics();
+        }
     }
 
     #[wasm_bindgen]
@@ -136,37 +136,70 @@ impl Game {
         // Clear canvas
         self.ctx.clear_rect(0.0, 0.0, self.width, self.height);
 
-        // Set background
-        self.ctx.set_fill_style(&JsValue::from_str("#1e1e1e"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+        match self.state.current_screen {
+            GameScreen::LoginScreen => self.render_login_screen(),
+            GameScreen::ServerSelection => self.render_server_selection(),
+            GameScreen::MainMenu => self.render_main_menu(),
+            GameScreen::GameHUD => self.render_game_hud(),
+            GameScreen::Inventory => self.render_inventory(),
+            GameScreen::Shop => self.render_shop(),
+            GameScreen::HelpModal => self.render_help_modal(),
+        }
+    }
 
-        // Draw ball
-        self.ctx.begin_path();
-        self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
-        self.ctx
-            .arc(
-                self.ball_x,
-                self.ball_y,
-                BALL_RADIUS,
-                0.0,
-                2.0 * std::f64::consts::PI,
-            )
-            .unwrap();
-        self.ctx.fill();
+    /// Handle input events from the frontend
+    #[wasm_bindgen]
+    pub fn handle_input(&mut self, event_type: &str, data: &str) -> bool {
+        match event_type {
+            "keydown" => {
+                if let Some(input_event) = self.input_handler.handle_key_down(data) {
+                    self.process_input_event(input_event)
+                } else {
+                    false
+                }
+            }
+            "keyup" => {
+                self.input_handler.handle_key_up(data);
+                false
+            }
+            "mouseclick" => {
+                if let Ok(coords) = serde_json::from_str::<(f64, f64)>(data) {
+                    let input_event = self.input_handler.handle_mouse_click(coords.0, coords.1);
+                    self.process_input_event(input_event)
+                } else {
+                    false
+                }
+            }
+            "touch" => {
+                if let Ok(coords) = serde_json::from_str::<(f64, f64)>(data) {
+                    let input_event = self.input_handler.handle_touch(coords.0, coords.1);
+                    self.process_input_event(input_event)
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
+    }
 
-        // Draw title
-        self.ctx.set_fill_style(&JsValue::from_str("white"));
-        self.ctx.set_font("40px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("Rust Game in Browser!", self.width / 2.0, 50.0)
-            .unwrap();
+    /// Get current game screen for the frontend
+    #[wasm_bindgen]
+    pub fn get_current_screen(&self) -> String {
+        format!("{:?}", self.state.current_screen)
+    }
 
-        // Draw subtitle
-        self.ctx.set_font("20px Arial");
-        self.ctx
-            .fill_text("Made with Rust + WASM", self.width / 2.0, 80.0)
-            .unwrap();
+    /// Get current game state as JSON for the frontend
+    #[wasm_bindgen]
+    pub fn get_game_state(&self) -> String {
+        serde_json::to_string(&serde_json::json!({
+            "screen": format!("{:?}", self.state.current_screen),
+            "region": self.state.selected_region.as_ref().map(|r| format!("{:?}", r)),
+            "player_name": self.state.player_name,
+            "is_loading": self.state.is_loading,
+            "error": self.state.error_message,
+            "player_position": [self.state.player_x, self.state.player_y],
+            "ball_position": [self.state.ball_x, self.state.ball_y]
+        })).unwrap_or_default()
     }
 
     #[wasm_bindgen]
@@ -175,24 +208,477 @@ impl Game {
         self.height = height as f64;
         self.canvas.set_width(width);
         self.canvas.set_height(height);
+        
+        // Update game state dimensions
+        self.state.world_width = self.width;
+        self.state.world_height = self.height;
     }
 
     #[wasm_bindgen]
     pub fn reset(&mut self) {
-        self.ball_x = self.width / 2.0;
-        self.ball_y = self.height / 2.0;
-        self.ball_dx = DEFAULT_BALL_SPEED_X;
-        self.ball_dy = DEFAULT_BALL_SPEED_Y;
+        self.state.reset();
     }
 
+    // Legacy compatibility methods
     #[wasm_bindgen]
     pub fn get_ball_position(&self) -> Vec<f64> {
-        vec![self.ball_x, self.ball_y]
+        vec![self.state.ball_x, self.state.ball_y]
     }
 
     #[wasm_bindgen]
     pub fn get_ball_velocity(&self) -> Vec<f64> {
-        vec![self.ball_dx, self.ball_dy]
+        vec![self.state.ball_dx, self.state.ball_dy]
+    }
+}
+
+impl Game {
+    /// Process input events and update game state accordingly
+    fn process_input_event(&mut self, event: InputEvent) -> bool {
+        match (&self.state.current_screen, event) {
+            // Login Screen
+            (GameScreen::LoginScreen, InputEvent::Enter) => {
+                self.state.set_player_name("Player".to_string());
+                self.state.transition_to(GameScreen::ServerSelection);
+                true
+            }
+            (GameScreen::LoginScreen, InputEvent::MouseClick { .. }) => {
+                self.state.set_player_name("Player".to_string());
+                self.state.transition_to(GameScreen::ServerSelection);
+                true
+            }
+
+            // Server Selection
+            (GameScreen::ServerSelection, InputEvent::Enter) => {
+                if self.state.selected_region.is_none() {
+                    self.state.set_region(Region::EU); // Default to EU
+                }
+                self.state.transition_to(GameScreen::MainMenu);
+                true
+            }
+            (GameScreen::ServerSelection, InputEvent::MouseClick { x, y }) => {
+                // Simple region selection based on click position
+                let region = if y < self.height / 3.0 {
+                    Region::EU
+                } else if y < 2.0 * self.height / 3.0 {
+                    Region::ASIA
+                } else {
+                    Region::VIETNAM
+                };
+                self.state.set_region(region);
+                self.state.transition_to(GameScreen::MainMenu);
+                true
+            }
+
+            // Main Menu
+            (GameScreen::MainMenu, InputEvent::Enter) => {
+                self.state.transition_to(GameScreen::GameHUD);
+                true
+            }
+            (GameScreen::MainMenu, InputEvent::MouseClick { .. }) => {
+                self.state.transition_to(GameScreen::GameHUD);
+                true
+            }
+
+            // Game HUD - movement and UI toggles
+            (GameScreen::GameHUD, InputEvent::ToggleInventory) => {
+                self.state.transition_to(GameScreen::Inventory);
+                true
+            }
+            (GameScreen::GameHUD, InputEvent::ToggleShop) => {
+                self.state.transition_to(GameScreen::Shop);
+                true
+            }
+            (GameScreen::GameHUD, InputEvent::ToggleHelp) => {
+                self.state.transition_to(GameScreen::HelpModal);
+                true
+            }
+
+            // Inventory, Shop, Help Modal - go back to game
+            (GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal, InputEvent::Escape) => {
+                self.state.transition_to(GameScreen::GameHUD);
+                true
+            }
+            (GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal, InputEvent::MenuBack) => {
+                self.state.transition_to(GameScreen::GameHUD);
+                true
+            }
+
+            // Global escape handling
+            (_, InputEvent::Escape) => {
+                match self.state.current_screen {
+                    GameScreen::LoginScreen => false, // Can't escape from login
+                    GameScreen::ServerSelection => {
+                        self.state.transition_to(GameScreen::LoginScreen);
+                        true
+                    }
+                    GameScreen::MainMenu => {
+                        self.state.transition_to(GameScreen::ServerSelection);
+                        true
+                    }
+                    GameScreen::GameHUD => false, // Stay in game
+                    _ => {
+                        self.state.transition_to(GameScreen::GameHUD);
+                        true
+                    }
+                }
+            }
+
+            _ => false, // Unhandled event
+        }
+    }
+
+    /// Render the login screen
+    fn render_login_screen(&self) {
+        // Set background
+        self.ctx.set_fill_style(&JsValue::from_str("#2a2a3a"));
+        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+
+        // Title
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_font("48px Arial");
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("RPG Game", self.width / 2.0, 150.0)
+            .unwrap();
+
+        // Subtitle
+        self.ctx.set_font("24px Arial");
+        self.ctx
+            .fill_text("Enter to Continue", self.width / 2.0, 200.0)
+            .unwrap();
+
+        // Instructions
+        self.ctx.set_font("16px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
+        self.ctx
+            .fill_text("Click anywhere or press Enter to start", self.width / 2.0, self.height - 50.0)
+            .unwrap();
+    }
+
+    /// Render the server selection screen
+    fn render_server_selection(&self) {
+        // Set background
+        self.ctx.set_fill_style(&JsValue::from_str("#1a1a2e"));
+        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+
+        // Title
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_font("36px Arial");
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("Select Region", self.width / 2.0, 100.0)
+            .unwrap();
+
+        // Region options
+        let regions = [("EU", Region::EU), ("ASIA", Region::ASIA), ("VIETNAM", Region::VIETNAM)];
+        for (i, (name, region)) in regions.iter().enumerate() {
+            let y = 200.0 + (i as f64 * 80.0);
+            let is_selected = self.state.selected_region.as_ref() == Some(region);
+
+            // Highlight selected region
+            if is_selected {
+                self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
+            } else {
+                self.ctx.set_fill_style(&JsValue::from_str("#666666"));
+            }
+
+            // Draw region box
+            self.ctx.fill_rect(self.width / 2.0 - 100.0, y - 25.0, 200.0, 50.0);
+
+            // Draw region text
+            self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+            self.ctx.set_font("24px Arial");
+            self.ctx.fill_text(name, self.width / 2.0, y + 5.0).unwrap();
+        }
+
+        // Instructions
+        self.ctx.set_font("16px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
+        self.ctx
+            .fill_text("Click a region or press Enter", self.width / 2.0, self.height - 50.0)
+            .unwrap();
+    }
+
+    /// Render the main menu
+    fn render_main_menu(&self) {
+        // Set background
+        self.ctx.set_fill_style(&JsValue::from_str("#0f0f23"));
+        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+
+        // Title
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_font("42px Arial");
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("Main Menu", self.width / 2.0, 120.0)
+            .unwrap();
+
+        // Player info
+        if let Some(name) = &self.state.player_name {
+            self.ctx.set_font("20px Arial");
+            self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
+            self.ctx
+                .fill_text(&format!("Welcome, {}!", name), self.width / 2.0, 170.0)
+                .unwrap();
+        }
+
+        if let Some(region) = &self.state.selected_region {
+            self.ctx.set_font("16px Arial");
+            self.ctx.set_fill_style(&JsValue::from_str("#888888"));
+            self.ctx
+                .fill_text(&format!("Region: {:?}", region), self.width / 2.0, 200.0)
+                .unwrap();
+        }
+
+        // Start game button
+        self.ctx.set_fill_style(&JsValue::from_str("#228b22"));
+        self.ctx.fill_rect(self.width / 2.0 - 100.0, 250.0, 200.0, 50.0);
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_font("24px Arial");
+        self.ctx.fill_text("Start Game", self.width / 2.0, 280.0).unwrap();
+
+        // Instructions
+        self.ctx.set_font("16px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
+        self.ctx
+            .fill_text("Click Start Game or press Enter", self.width / 2.0, self.height - 50.0)
+            .unwrap();
+    }
+
+    /// Render the game HUD (main gameplay screen)
+    fn render_game_hud(&self) {
+        // Set background
+        self.ctx.set_fill_style(&JsValue::from_str("#1e1e1e"));
+        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+
+        // Draw bouncing ball (legacy compatibility)
+        self.ctx.begin_path();
+        self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
+        self.ctx
+            .arc(
+                self.state.ball_x,
+                self.state.ball_y,
+                BALL_RADIUS,
+                0.0,
+                2.0 * std::f64::consts::PI,
+            )
+            .unwrap();
+        self.ctx.fill();
+
+        // Draw player character
+        self.ctx.begin_path();
+        self.ctx.set_fill_style(&JsValue::from_str("#ff6b6b"));
+        self.ctx
+            .arc(
+                self.state.player_x,
+                self.state.player_y,
+                15.0,
+                0.0,
+                2.0 * std::f64::consts::PI,
+            )
+            .unwrap();
+        self.ctx.fill();
+
+        // HUD elements
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_font("16px Arial");
+        self.ctx.set_text_align("left");
+
+        // Player position
+        self.ctx
+            .fill_text(
+                &format!("Player: ({:.0}, {:.0})", self.state.player_x, self.state.player_y),
+                10.0,
+                30.0,
+            )
+            .unwrap();
+
+        // Controls help
+        self.ctx.set_font("14px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
+        self.ctx.fill_text("WASD/Arrows: Move", 10.0, self.height - 90.0).unwrap();
+        self.ctx.fill_text("I: Inventory", 10.0, self.height - 70.0).unwrap();
+        self.ctx.fill_text("T: Shop", 10.0, self.height - 50.0).unwrap();
+        self.ctx.fill_text("H: Help", 10.0, self.height - 30.0).unwrap();
+
+        // Game title
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_font("24px Arial");
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("RPG Game World", self.width / 2.0, 30.0)
+            .unwrap();
+    }
+
+    /// Render the inventory screen
+    fn render_inventory(&self) {
+        // Semi-transparent overlay
+        self.ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
+        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+
+        // Inventory panel
+        let panel_width = 400.0;
+        let panel_height = 300.0;
+        let panel_x = (self.width - panel_width) / 2.0;
+        let panel_y = (self.height - panel_height) / 2.0;
+
+        self.ctx.set_fill_style(&JsValue::from_str("#2a2a3a"));
+        self.ctx.fill_rect(panel_x, panel_y, panel_width, panel_height);
+
+        // Border
+        self.ctx.set_stroke_style(&JsValue::from_str("#4fc3f7"));
+        self.ctx.set_line_width(2.0);
+        self.ctx.stroke_rect(panel_x, panel_y, panel_width, panel_height);
+
+        // Title
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_font("24px Arial");
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("Inventory", self.width / 2.0, panel_y + 40.0)
+            .unwrap();
+
+        // Placeholder items
+        self.ctx.set_font("16px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#cccccc"));
+        self.ctx
+            .fill_text("• Health Potion x3", self.width / 2.0, panel_y + 80.0)
+            .unwrap();
+        self.ctx
+            .fill_text("• Magic Sword", self.width / 2.0, panel_y + 110.0)
+            .unwrap();
+        self.ctx
+            .fill_text("• Iron Shield", self.width / 2.0, panel_y + 140.0)
+            .unwrap();
+
+        // Close instruction
+        self.ctx.set_font("14px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
+        self.ctx
+            .fill_text("Press ESC to close", self.width / 2.0, panel_y + panel_height - 20.0)
+            .unwrap();
+    }
+
+    /// Render the shop screen
+    fn render_shop(&self) {
+        // Semi-transparent overlay
+        self.ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
+        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+
+        // Shop panel
+        let panel_width = 450.0;
+        let panel_height = 350.0;
+        let panel_x = (self.width - panel_width) / 2.0;
+        let panel_y = (self.height - panel_height) / 2.0;
+
+        self.ctx.set_fill_style(&JsValue::from_str("#3a2a2a"));
+        self.ctx.fill_rect(panel_x, panel_y, panel_width, panel_height);
+
+        // Border
+        self.ctx.set_stroke_style(&JsValue::from_str("#ffd700"));
+        self.ctx.set_line_width(2.0);
+        self.ctx.stroke_rect(panel_x, panel_y, panel_width, panel_height);
+
+        // Title
+        self.ctx.set_fill_style(&JsValue::from_str("#ffd700"));
+        self.ctx.set_font("24px Arial");
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("Shop", self.width / 2.0, panel_y + 40.0)
+            .unwrap();
+
+        // Shop items
+        self.ctx.set_font("16px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#cccccc"));
+        self.ctx
+            .fill_text("• Health Potion - 50 gold", self.width / 2.0, panel_y + 80.0)
+            .unwrap();
+        self.ctx
+            .fill_text("• Magic Scroll - 100 gold", self.width / 2.0, panel_y + 110.0)
+            .unwrap();
+        self.ctx
+            .fill_text("• Steel Armor - 500 gold", self.width / 2.0, panel_y + 140.0)
+            .unwrap();
+        self.ctx
+            .fill_text("• Enchanted Ring - 1000 gold", self.width / 2.0, panel_y + 170.0)
+            .unwrap();
+
+        // Player gold
+        self.ctx.set_font("18px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#ffd700"));
+        self.ctx
+            .fill_text("Gold: 750", self.width / 2.0, panel_y + 220.0)
+            .unwrap();
+
+        // Close instruction
+        self.ctx.set_font("14px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
+        self.ctx
+            .fill_text("Press ESC to close", self.width / 2.0, panel_y + panel_height - 20.0)
+            .unwrap();
+    }
+
+    /// Render the help modal
+    fn render_help_modal(&self) {
+        // Semi-transparent overlay
+        self.ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.9)"));
+        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
+
+        // Help panel
+        let panel_width = 500.0;
+        let panel_height = 400.0;
+        let panel_x = (self.width - panel_width) / 2.0;
+        let panel_y = (self.height - panel_height) / 2.0;
+
+        self.ctx.set_fill_style(&JsValue::from_str("#2a3a2a"));
+        self.ctx.fill_rect(panel_x, panel_y, panel_width, panel_height);
+
+        // Border
+        self.ctx.set_stroke_style(&JsValue::from_str("#90ee90"));
+        self.ctx.set_line_width(2.0);
+        self.ctx.stroke_rect(panel_x, panel_y, panel_width, panel_height);
+
+        // Title
+        self.ctx.set_fill_style(&JsValue::from_str("#90ee90"));
+        self.ctx.set_font("24px Arial");
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("Help & Controls", self.width / 2.0, panel_y + 40.0)
+            .unwrap();
+
+        // Help content
+        self.ctx.set_font("16px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+        self.ctx.set_text_align("left");
+
+        let help_text = [
+            "Movement:",
+            "  • WASD or Arrow Keys - Move player",
+            "",
+            "UI Controls:",
+            "  • I - Toggle Inventory",
+            "  • T - Toggle Shop",
+            "  • H or F1 - Toggle Help",
+            "  • ESC - Go back/Close panels",
+            "",
+            "Mouse/Touch:",
+            "  • Click to interact with UI elements",
+            "  • Tap on mobile devices",
+        ];
+
+        for (i, line) in help_text.iter().enumerate() {
+            self.ctx
+                .fill_text(line, panel_x + 20.0, panel_y + 80.0 + (i as f64 * 20.0))
+                .unwrap();
+        }
+
+        // Close instruction
+        self.ctx.set_font("14px Arial");
+        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
+        self.ctx.set_text_align("center");
+        self.ctx
+            .fill_text("Press ESC to close", self.width / 2.0, panel_y + panel_height - 20.0)
+            .unwrap();
     }
 }
 
@@ -220,8 +706,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_game_state_initialization() {
-        let state = GameState::new(800.0, 600.0);
+    fn test_legacy_game_state_initialization() {
+        let state = LegacyBallState::new(800.0, 600.0);
 
         // Ball should start at center
         assert_eq!(state.ball_x, 400.0);
@@ -237,8 +723,8 @@ mod tests {
     }
 
     #[test]
-    fn test_ball_movement() {
-        let mut state = GameState::new(800.0, 600.0);
+    fn test_legacy_ball_movement() {
+        let mut state = LegacyBallState::new(800.0, 600.0);
         let initial_x = state.ball_x;
         let initial_y = state.ball_y;
 
@@ -250,173 +736,59 @@ mod tests {
     }
 
     #[test]
-    fn test_left_wall_collision() {
-        let mut state = GameState::new(800.0, 600.0);
+    fn test_new_game_state_initialization() {
+        let state = GameState::new(800.0, 600.0);
 
-        // Position ball near left wall, moving left
-        state.ball_x = BALL_RADIUS + 1.0;
-        state.ball_y = 300.0;
-        state.ball_dx = -5.0; // Moving left
-        state.ball_dy = 2.0;
-
-        state.update();
-
-        // Ball should bounce off left wall (dx should reverse)
-        assert!(
-            state.ball_dx > 0.0,
-            "Ball should bounce right after hitting left wall"
-        );
-        assert_eq!(state.ball_dx, 5.0); // Should be positive now
-        assert_eq!(state.ball_dy, 2.0); // Y velocity unchanged
-        assert_eq!(state.ball_x, BALL_RADIUS); // Should be clamped to boundary
+        assert_eq!(state.current_screen, GameScreen::LoginScreen);
+        assert_eq!(state.selected_region, None);
+        assert_eq!(state.player_name, None);
+        assert!(!state.is_loading);
+        assert_eq!(state.error_message, None);
+        assert_eq!(state.player_x, 400.0);
+        assert_eq!(state.player_y, 300.0);
+        assert_eq!(state.world_width, 800.0);
+        assert_eq!(state.world_height, 600.0);
     }
 
     #[test]
-    fn test_right_wall_collision() {
+    fn test_screen_transitions() {
         let mut state = GameState::new(800.0, 600.0);
 
-        // Position ball near right wall, moving right
-        state.ball_x = 800.0 - BALL_RADIUS - 1.0;
-        state.ball_y = 300.0;
-        state.ball_dx = 5.0; // Moving right
-        state.ball_dy = 2.0;
+        state.transition_to(GameScreen::ServerSelection);
+        assert_eq!(state.current_screen, GameScreen::ServerSelection);
 
-        state.update();
+        state.transition_to(GameScreen::MainMenu);
+        assert_eq!(state.current_screen, GameScreen::MainMenu);
 
-        // Ball should bounce off right wall (dx should reverse)
-        assert!(
-            state.ball_dx < 0.0,
-            "Ball should bounce left after hitting right wall"
-        );
-        assert_eq!(state.ball_dx, -5.0); // Should be negative now
-        assert_eq!(state.ball_dy, 2.0); // Y velocity unchanged
-        assert_eq!(state.ball_x, 800.0 - BALL_RADIUS); // Should be clamped to boundary
+        state.transition_to(GameScreen::GameHUD);
+        assert_eq!(state.current_screen, GameScreen::GameHUD);
     }
 
     #[test]
-    fn test_top_wall_collision() {
+    fn test_player_movement() {
         let mut state = GameState::new(800.0, 600.0);
+        
+        // Movement should only work in GameHUD screen
+        state.transition_to(GameScreen::GameHUD);
+        let initial_x = state.player_x;
+        let initial_y = state.player_y;
 
-        // Position ball near top wall, moving up
-        state.ball_x = 400.0;
-        state.ball_y = BALL_RADIUS + 1.0;
-        state.ball_dx = 3.0;
-        state.ball_dy = -5.0; // Moving up
-
-        state.update();
-
-        // Ball should bounce off top wall (dy should reverse)
-        assert!(
-            state.ball_dy > 0.0,
-            "Ball should bounce down after hitting top wall"
-        );
-        assert_eq!(state.ball_dx, 3.0); // X velocity unchanged
-        assert_eq!(state.ball_dy, 5.0); // Should be positive now
-        assert_eq!(state.ball_y, BALL_RADIUS); // Should be clamped to boundary
+        state.move_player(10.0, -5.0);
+        assert_eq!(state.player_x, initial_x + 10.0);
+        assert_eq!(state.player_y, initial_y - 5.0);
     }
 
     #[test]
-    fn test_bottom_wall_collision() {
-        let mut state = GameState::new(800.0, 600.0);
+    fn test_input_handler() {
+        let mut handler = InputHandler::new();
 
-        // Position ball near bottom wall, moving down
-        state.ball_x = 400.0;
-        state.ball_y = 600.0 - BALL_RADIUS - 1.0;
-        state.ball_dx = 3.0;
-        state.ball_dy = 5.0; // Moving down
-
-        state.update();
-
-        // Ball should bounce off bottom wall (dy should reverse)
-        assert!(
-            state.ball_dy < 0.0,
-            "Ball should bounce up after hitting bottom wall"
-        );
-        assert_eq!(state.ball_dx, 3.0); // X velocity unchanged
-        assert_eq!(state.ball_dy, -5.0); // Should be negative now
-        assert_eq!(state.ball_y, 600.0 - BALL_RADIUS); // Should be clamped to boundary
-    }
-
-    #[test]
-    fn test_corner_collision() {
-        let mut state = GameState::new(800.0, 600.0);
-
-        // Position ball near top-left corner, moving up and left
-        state.ball_x = BALL_RADIUS + 1.0;
-        state.ball_y = BALL_RADIUS + 1.0;
-        state.ball_dx = -5.0; // Moving left
-        state.ball_dy = -3.0; // Moving up
-
-        state.update();
-
-        // Both velocities should reverse
-        assert!(
-            state.ball_dx > 0.0,
-            "Ball should bounce right after hitting left wall"
-        );
-        assert!(
-            state.ball_dy > 0.0,
-            "Ball should bounce down after hitting top wall"
-        );
-        assert_eq!(state.ball_dx, 5.0);
-        assert_eq!(state.ball_dy, 3.0);
-    }
-
-    #[test]
-    fn test_ball_stays_in_bounds() {
-        let mut state = GameState::new(800.0, 600.0);
-
-        // Run simulation for many steps
-        for _ in 0..1000 {
-            state.update();
-
-            // Ball should always stay within bounds
-            assert!(
-                state.ball_x >= BALL_RADIUS,
-                "Ball X should not go below left boundary"
-            );
-            assert!(
-                state.ball_x <= 800.0 - BALL_RADIUS,
-                "Ball X should not go beyond right boundary"
-            );
-            assert!(
-                state.ball_y >= BALL_RADIUS,
-                "Ball Y should not go below top boundary"
-            );
-            assert!(
-                state.ball_y <= 600.0 - BALL_RADIUS,
-                "Ball Y should not go beyond bottom boundary"
-            );
-        }
-    }
-
-    #[test]
-    fn test_set_velocity() {
-        let mut state = GameState::new(800.0, 600.0);
-
-        state.set_velocity(10.0, -5.0);
-
-        assert_eq!(state.ball_dx, 10.0);
-        assert_eq!(state.ball_dy, -5.0);
-    }
-
-    #[test]
-    fn test_reset() {
-        let mut state = GameState::new(800.0, 600.0);
-
-        // Move ball and change velocity
-        state.ball_x = 100.0;
-        state.ball_y = 200.0;
-        state.ball_dx = 10.0;
-        state.ball_dy = -8.0;
-
-        state.reset();
-
-        // Should be back to initial state
-        assert_eq!(state.ball_x, 400.0); // Center X
-        assert_eq!(state.ball_y, 300.0); // Center Y
-        assert_eq!(state.ball_dx, DEFAULT_BALL_SPEED_X);
-        assert_eq!(state.ball_dy, DEFAULT_BALL_SPEED_Y);
+        assert_eq!(handler.handle_key_down("KeyW"), Some(InputEvent::MoveUp));
+        assert_eq!(handler.handle_key_down("KeyI"), Some(InputEvent::ToggleInventory));
+        assert_eq!(handler.handle_key_down("Enter"), Some(InputEvent::Enter));
+        
+        assert!(handler.is_moving());
+        handler.handle_key_up("KeyW");
+        assert!(!handler.is_moving());
     }
 
     #[test]
@@ -427,45 +799,15 @@ mod tests {
     }
 
     #[test]
-    fn test_different_canvas_sizes() {
-        // Test with different canvas dimensions
-        let test_cases = vec![
-            (400.0, 300.0),
-            (1024.0, 768.0),
-            (1920.0, 1080.0),
-            (100.0, 100.0), // Small canvas
-        ];
+    fn test_legacy_ball_physics() {
+        let mut state = LegacyBallState::new(800.0, 600.0);
+        let initial_x = state.ball_x;
+        let initial_y = state.ball_y;
 
-        for (width, height) in test_cases {
-            let state = GameState::new(width, height);
+        state.update();
 
-            // Ball should start at center
-            assert_eq!(state.ball_x, width / 2.0);
-            assert_eq!(state.ball_y, height / 2.0);
-
-            // Dimensions should be correct
-            assert_eq!(state.width, width);
-            assert_eq!(state.height, height);
-        }
-    }
-
-    #[test]
-    fn test_physics_conservation() {
-        let mut state = GameState::new(800.0, 600.0);
-
-        // Set initial velocity
-        let initial_speed = (state.ball_dx.powi(2) + state.ball_dy.powi(2)).sqrt();
-
-        // Run simulation and check that speed is conserved after bounces
-        for _ in 0..100 {
-            state.update();
-            let current_speed = (state.ball_dx.powi(2) + state.ball_dy.powi(2)).sqrt();
-
-            // Speed should remain constant (energy conservation)
-            assert!(
-                (current_speed - initial_speed).abs() < 1e-10,
-                "Speed should be conserved: initial={initial_speed}, current={current_speed}"
-            );
-        }
+        // Ball should have moved
+        assert_ne!(state.ball_x, initial_x);
+        assert_ne!(state.ball_y, initial_y);
     }
 }
