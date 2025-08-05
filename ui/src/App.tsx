@@ -320,13 +320,6 @@ const App = () => {
           <div class="status">Status: {gameStatus()}</div>
         </header>
 
-        {/* TEST OVERLAY - Always show */}
-        <div class="test-ui-overlay">
-          <div class="test-message">
-            SolidJS UI is working! Game instance: {gameInstance() ? 'loaded' : 'null'}
-          </div>
-        </div>
-
         {/* Main Game UI with state management */}
         <GameStateManager gameInstance={gameInstance()}>
           {(gameState, currentScreen) => {

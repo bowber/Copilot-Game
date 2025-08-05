@@ -296,7 +296,6 @@ export const GameStateManager: Component<{
     updateGameState();
   });
 
-  // eslint-disable-next-line solid/reactivity
   return props.children(gameState(), currentScreen());
 };
 

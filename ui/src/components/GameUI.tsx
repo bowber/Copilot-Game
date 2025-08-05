@@ -42,20 +42,11 @@ export const GameUI: Component<{
 
       {/* Screen-specific UI overlays */}
       <Show when={props.currentScreen && props.gameState}>
-        {() => {
-          console.log('GameUI Show condition triggered:', { 
-            currentScreen: props.currentScreen, 
-            gameState: props.gameState,
-            gameInstance: !!props.gameInstance 
-          });
-          return (
-            <ScreenSelector
-              screen={props.currentScreen!}
-              gameState={props.gameState!}
-              gameInstance={props.gameInstance}
-            />
-          );
-        }}
+        <ScreenSelector
+          screen={props.currentScreen!}
+          gameState={props.gameState!}
+          gameInstance={props.gameInstance}
+        />
       </Show>
 
       {/* Mobile Controls - only show on GameHUD screen when mobile */}
@@ -84,52 +75,31 @@ const ScreenSelector: Component<{
   return (
     <>
       <Show when={props.screen === 'LoginScreen'}>
-        {() => {
-          console.log('Rendering LoginScreen');
-          return <LoginScreen {...screenProps} />;
-        }}
+        <LoginScreen {...screenProps} />
       </Show>
 
       <Show when={props.screen === 'ServerSelection'}>
-        {() => {
-          console.log('Rendering ServerSelection');
-          return <ServerSelectionScreen {...screenProps} />;
-        }}
+        <ServerSelectionScreen {...screenProps} />
       </Show>
 
       <Show when={props.screen === 'MainMenu'}>
-        {() => {
-          console.log('Rendering MainMenu');
-          return <MainMenuScreen {...screenProps} />;
-        }}
+        <MainMenuScreen {...screenProps} />
       </Show>
 
       <Show when={props.screen === 'GameHUD'}>
-        {() => {
-          console.log('Rendering GameHUD');
-          return <GameHUDScreen {...screenProps} />;
-        }}
+        <GameHUDScreen {...screenProps} />
       </Show>
 
       <Show when={props.screen === 'Inventory'}>
-        {() => {
-          console.log('Rendering Inventory');
-          return <InventoryScreen {...screenProps} />;
-        }}
+        <InventoryScreen {...screenProps} />
       </Show>
 
       <Show when={props.screen === 'Shop'}>
-        {() => {
-          console.log('Rendering Shop');
-          return <ShopScreen {...screenProps} />;
-        }}
+        <ShopScreen {...screenProps} />
       </Show>
 
       <Show when={props.screen === 'HelpModal'}>
-        {() => {
-          console.log('Rendering HelpModal');
-          return <HelpScreen {...screenProps} />;
-        }}
+        <HelpScreen {...screenProps} />
       </Show>
     </>
   );
