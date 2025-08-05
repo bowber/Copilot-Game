@@ -10,6 +10,17 @@
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
 }
 
+/* Fullscreen Game UI */
+.app-container.fullscreen .game-ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  z-index: 9998;
+}
+
 /* Game Canvas */
 .game-canvas {
   border: 2px solid #4fc3f7;
@@ -22,6 +33,15 @@
 .game-canvas:focus {
   border-color: #81d4fa;
   box-shadow: 0 0 30px rgba(129, 212, 250, 0.5);
+}
+
+/* Fullscreen Canvas */
+.app-container.fullscreen .game-canvas {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100vw;
+  height: 100vh;
 }
 
 /* Screen Overlay Base */

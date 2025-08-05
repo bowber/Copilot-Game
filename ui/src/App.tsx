@@ -15,6 +15,7 @@ const App = () => {
   const [isGameRunning, setIsGameRunning] = createSignal(false);
   const [gameStatus, setGameStatus] = createSignal('Loading...');
   const [canvasSize, setCanvasSize] = createSignal({ width: 800, height: 600 });
+  const [isFullscreen, setIsFullscreen] = createSignal(false);
 
   let animationId: number | null = null;
   let canvasRef: HTMLCanvasElement | undefined;
@@ -123,12 +124,64 @@ const App = () => {
     }
   };
 
+  const toggleFullscreen = () => {
+    const newFullscreenState = !isFullscreen();
+    setIsFullscreen(newFullscreenState);
+
+    // Resize canvas immediately when toggling fullscreen
+    setTimeout(() => resizeCanvas(), 0);
+
+    // Capture current state before any async operations to avoid reactivity issues
+    const currentCanvasSize = canvasSize();
+    const currentGameStatus = gameStatus();
+    const currentIsGameRunning = isGameRunning();
+
+    // Use browser's fullscreen API if available
+    if (newFullscreenState) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(error => {
+          // Fallback to CSS-only fullscreen if browser fullscreen fails
+          errorLogger.logGameError(
+            'Browser fullscreen not supported or denied',
+            {
+              error: error.message,
+              canvasSize: currentCanvasSize,
+              gameStatus: currentGameStatus,
+              isGameRunning: currentIsGameRunning,
+            }
+          );
+        });
+      }
+    } else {
+      if (document.exitFullscreen && document.fullscreenElement) {
+        document.exitFullscreen().catch(error => {
+          errorLogger.logGameError('Exit fullscreen failed', {
+            error: error.message,
+            canvasSize: currentCanvasSize,
+            gameStatus: currentGameStatus,
+            isGameRunning: currentIsGameRunning,
+          });
+        });
+      }
+    }
+  };
+
   const resizeCanvas = () => {
     try {
       const instance = gameInstance();
       if (canvasRef && instance) {
-        const newWidth = Math.min(window.innerWidth - 40, 800);
-        const newHeight = Math.min(window.innerHeight - 200, 600);
+        let newWidth: number;
+        let newHeight: number;
+
+        if (isFullscreen()) {
+          // In fullscreen mode, use full viewport dimensions
+          newWidth = window.innerWidth;
+          newHeight = window.innerHeight;
+        } else {
+          // Normal mode with size constraints
+          newWidth = Math.min(window.innerWidth - 40, 800);
+          newHeight = Math.min(window.innerHeight - 200, 600);
+        }
 
         setCanvasSize({ width: newWidth, height: newHeight });
         instance.resize(newWidth, newHeight);
@@ -142,6 +195,7 @@ const App = () => {
         canvasSize: canvasSize(),
         gameStatus: gameStatus(),
         isGameRunning: isGameRunning(),
+        isFullscreen: isFullscreen(),
       });
     }
   };
@@ -167,11 +221,42 @@ const App = () => {
 
     // Add resize listener
     window.addEventListener('resize', resizeCanvas);
+
+    // Listen for browser fullscreen changes
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement;
+      if (isCurrentlyFullscreen !== isFullscreen()) {
+        setIsFullscreen(isCurrentlyFullscreen);
+        setTimeout(() => resizeCanvas(), 0);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
   });
 
   onCleanup(() => {
     stopGame();
     window.removeEventListener('resize', resizeCanvas);
+
+    // Remove fullscreen event listeners
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement;
+      if (isCurrentlyFullscreen !== isFullscreen()) {
+        setIsFullscreen(isCurrentlyFullscreen);
+        setTimeout(() => resizeCanvas(), 0);
+      }
+    };
+
+    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.removeEventListener(
+      'webkitfullscreenchange',
+      handleFullscreenChange
+    );
+    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
 
     // Cleanup input manager
     if (inputManager && canvasRef) {
@@ -183,8 +268,8 @@ const App = () => {
   return (
     <>
       <ErrorToastManager />
-      <div class="app-container">
-        <header class="app-header">
+      <div class={`app-container ${isFullscreen() ? 'fullscreen' : ''}`}>
+        <header class={`app-header ${isFullscreen() ? 'hidden' : ''}`}>
           <h1>🎮 RPG Game</h1>
           <p>A Rust + WASM RPG with SolidJS frontend</p>
           <div class="status">Status: {gameStatus()}</div>
@@ -203,7 +288,9 @@ const App = () => {
         </GameStateManager>
 
         {/* Development Controls */}
-        <div class="dev-controls">
+        <div
+          class={`dev-controls ${isFullscreen() ? 'fullscreen-controls' : ''}`}
+        >
           <button
             class="button"
             onClick={resumeGame}
@@ -221,6 +308,14 @@ const App = () => {
           >
             Restart
           </button>
+          <button
+            class="button fullscreen-button"
+            onClick={toggleFullscreen}
+            title={isFullscreen() ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen() ? '🔲' : '⛶'}{' '}
+            {isFullscreen() ? 'Exit' : 'Fullscreen'}
+          </button>
 
           {/* Test button for demonstrating error reporting */}
           <button
@@ -232,6 +327,7 @@ const App = () => {
                   canvasSize: canvasSize(),
                   gameStatus: gameStatus(),
                   isGameRunning: isGameRunning(),
+                  isFullscreen: isFullscreen(),
                 }
               );
             }}
@@ -240,7 +336,7 @@ const App = () => {
           </button>
         </div>
 
-        <div class="info">
+        <div class={`info ${isFullscreen() ? 'hidden' : ''}`}>
           <h3>About This Enhanced RPG</h3>
           <p>
             This is a demonstration of a modern RPG game architecture featuring:
