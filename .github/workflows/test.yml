@@ -5,6 +5,10 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  pull_request_review:
+    types: [ submitted ]
+  pull_request_target:
+    types: [ review_requested ]
 
 jobs:
   rust-tests:

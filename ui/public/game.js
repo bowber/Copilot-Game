@@ -207,16 +207,14 @@ export function start_game(canvas_id) {
 
 /**
  * Represents the different screens/states of the RPG game
- * @enum {0 | 1 | 2 | 3 | 4 | 5 | 6}
+ * Now simplified to only include the game HUD and modal overlays
+ * @enum {0 | 1 | 2 | 3}
  */
 export const GameScreen = Object.freeze({
-    LoginScreen: 0, "0": "LoginScreen",
-    ServerSelection: 1, "1": "ServerSelection",
-    MainMenu: 2, "2": "MainMenu",
-    GameHUD: 3, "3": "GameHUD",
-    Inventory: 4, "4": "Inventory",
-    Shop: 5, "5": "Shop",
-    HelpModal: 6, "6": "HelpModal",
+    GameHUD: 0, "0": "GameHUD",
+    Inventory: 1, "1": "Inventory",
+    Shop: 2, "2": "Shop",
+    HelpModal: 3, "3": "HelpModal",
 });
 
 const GameFinalization = (typeof FinalizationRegistry === 'undefined')
@@ -338,6 +336,51 @@ export class Game {
         wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
         return v1;
     }
+    /**
+     * Transition to a specific screen (called from SolidJS)
+     * @param {string} screen
+     */
+    transition_to_screen(screen) {
+        const ptr0 = passStringToWasm0(screen, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.game_transition_to_screen(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * Set player name (called from SolidJS)
+     * @param {string} name
+     */
+    set_player_name(name) {
+        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.game_set_player_name(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * Set selected region (called from SolidJS)
+     * @param {string} region
+     */
+    set_region(region) {
+        const ptr0 = passStringToWasm0(region, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.game_set_region(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * Get player position for UI display
+     * @returns {Float64Array}
+     */
+    get_player_position() {
+        const ret = wasm.game_get_player_position(this.__wbg_ptr);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * Check if player is moving (for UI indicators)
+     * @returns {boolean}
+     */
+    is_player_moving() {
+        const ret = wasm.game_is_player_moving(this.__wbg_ptr);
+        return ret !== 0;
+    }
 }
 
 async function __wbg_load(module, imports) {
@@ -405,9 +448,6 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_fillRect_c38d5d56492a2368 = function(arg0, arg1, arg2, arg3, arg4) {
         arg0.fillRect(arg1, arg2, arg3, arg4);
     };
-    imports.wbg.__wbg_fillText_2a0055d8531355d1 = function() { return handleError(function (arg0, arg1, arg2, arg3, arg4) {
-        arg0.fillText(getStringFromWasm0(arg1, arg2), arg3, arg4);
-    }, arguments) };
     imports.wbg.__wbg_fill_34096e49d2aaa307 = function(arg0) {
         arg0.fill();
     };
@@ -467,20 +507,8 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_setfillStyle_4f8f616d87dea4df = function(arg0, arg1) {
         arg0.fillStyle = arg1;
     };
-    imports.wbg.__wbg_setfont_42a163ef83420b93 = function(arg0, arg1, arg2) {
-        arg0.font = getStringFromWasm0(arg1, arg2);
-    };
     imports.wbg.__wbg_setheight_da683a33fa99843c = function(arg0, arg1) {
         arg0.height = arg1 >>> 0;
-    };
-    imports.wbg.__wbg_setlineWidth_ec730c524f09baa9 = function(arg0, arg1) {
-        arg0.lineWidth = arg1;
-    };
-    imports.wbg.__wbg_setstrokeStyle_88eaacb0e9a0c645 = function(arg0, arg1) {
-        arg0.strokeStyle = arg1;
-    };
-    imports.wbg.__wbg_settextAlign_e516a64e49622a08 = function(arg0, arg1, arg2) {
-        arg0.textAlign = getStringFromWasm0(arg1, arg2);
     };
     imports.wbg.__wbg_setwidth_c5fed9f5e7f0b406 = function(arg0, arg1) {
         arg0.width = arg1 >>> 0;
@@ -507,9 +535,6 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_static_accessor_WINDOW_5de37043a91a9c40 = function() {
         const ret = typeof window === 'undefined' ? null : window;
         return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
-    };
-    imports.wbg.__wbg_strokeRect_bfa0a2d3cd838033 = function(arg0, arg1, arg2, arg3, arg4) {
-        arg0.strokeRect(arg1, arg2, arg3, arg4);
     };
     imports.wbg.__wbg_width_5dde457d606ba683 = function(arg0) {
         const ret = arg0.width;

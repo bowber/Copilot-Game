@@ -126,9 +126,7 @@ impl Game {
         }
 
         // Update legacy ball physics for backward compatibility
-        if self.state.current_screen == GameScreen::GameHUD {
-            self.state.update_ball_physics();
-        }
+        self.state.update_ball_physics();
     }
 
     #[wasm_bindgen]
@@ -137,15 +135,9 @@ impl Game {
         // Clear canvas
         self.ctx.clear_rect(0.0, 0.0, self.width, self.height);
 
-        match self.state.current_screen {
-            GameScreen::LoginScreen => self.render_login_screen(),
-            GameScreen::ServerSelection => self.render_server_selection(),
-            GameScreen::MainMenu => self.render_main_menu(),
-            GameScreen::GameHUD => self.render_game_hud(),
-            GameScreen::Inventory => self.render_inventory(),
-            GameScreen::Shop => self.render_shop(),
-            GameScreen::HelpModal => self.render_help_modal(),
-        }
+        // Only render game world elements (no UI)
+        // Always render the game world since we start in GameHUD
+        self.render_game_world();
     }
 
     /// Handle input events from the frontend
@@ -242,78 +234,55 @@ impl Game {
     pub fn get_ball_velocity(&self) -> Vec<f64> {
         vec![self.state.ball_dx, self.state.ball_dy]
     }
+
+    /// Transition to a specific screen (called from SolidJS)
+    #[wasm_bindgen]
+    pub fn transition_to_screen(&mut self, screen: &str) {
+        let game_screen = match screen {
+            "GameHUD" => GameScreen::GameHUD,
+            "Inventory" => GameScreen::Inventory,
+            "Shop" => GameScreen::Shop,
+            "HelpModal" => GameScreen::HelpModal,
+            _ => return, // Invalid screen, ignore
+        };
+        self.state.transition_to(game_screen);
+    }
+
+    /// Set player name (called from SolidJS)
+    #[wasm_bindgen]
+    pub fn set_player_name(&mut self, name: &str) {
+        self.state.set_player_name(name.to_string());
+    }
+
+    /// Set selected region (called from SolidJS)
+    #[wasm_bindgen]
+    pub fn set_region(&mut self, region: &str) {
+        let game_region = match region {
+            "EU" => Region::EU,
+            "Asia" => Region::Asia,
+            "Vietnam" => Region::Vietnam,
+            _ => return, // Invalid region, ignore
+        };
+        self.state.set_region(game_region);
+    }
+
+    /// Get player position for UI display
+    #[wasm_bindgen]
+    pub fn get_player_position(&self) -> Vec<f64> {
+        vec![self.state.player_x, self.state.player_y]
+    }
+
+    /// Check if player is moving (for UI indicators)
+    #[wasm_bindgen]
+    pub fn is_player_moving(&self) -> bool {
+        self.input_handler.is_moving()
+    }
 }
 
 impl Game {
     /// Process input events and update game state accordingly
     fn process_input_event(&mut self, event: InputEvent) -> bool {
         match (&self.state.current_screen, event) {
-            // Login Screen
-            (GameScreen::LoginScreen, InputEvent::Enter) => {
-                self.state.set_player_name("Player".to_string());
-                self.state.transition_to(GameScreen::ServerSelection);
-                true
-            }
-            (GameScreen::LoginScreen, InputEvent::MouseClick { .. }) => {
-                self.state.set_player_name("Player".to_string());
-                self.state.transition_to(GameScreen::ServerSelection);
-                true
-            }
-            (GameScreen::LoginScreen, InputEvent::TouchTap { .. }) => {
-                self.state.set_player_name("Player".to_string());
-                self.state.transition_to(GameScreen::ServerSelection);
-                true
-            }
-
-            // Server Selection
-            (GameScreen::ServerSelection, InputEvent::Enter) => {
-                if self.state.selected_region.is_none() {
-                    self.state.set_region(Region::EU); // Default to EU
-                }
-                self.state.transition_to(GameScreen::MainMenu);
-                true
-            }
-            (GameScreen::ServerSelection, InputEvent::MouseClick { x: _, y }) => {
-                // Simple region selection based on click position
-                let region = if y < self.height / 3.0 {
-                    Region::EU
-                } else if y < 2.0 * self.height / 3.0 {
-                    Region::Asia
-                } else {
-                    Region::Vietnam
-                };
-                self.state.set_region(region);
-                self.state.transition_to(GameScreen::MainMenu);
-                true
-            }
-            (GameScreen::ServerSelection, InputEvent::TouchTap { x: _, y }) => {
-                // Simple region selection based on touch position (same logic as mouse)
-                let region = if y < self.height / 3.0 {
-                    Region::EU
-                } else if y < 2.0 * self.height / 3.0 {
-                    Region::Asia
-                } else {
-                    Region::Vietnam
-                };
-                self.state.set_region(region);
-                self.state.transition_to(GameScreen::MainMenu);
-                true
-            }
-
-            // Main Menu
-            (GameScreen::MainMenu, InputEvent::Enter) => {
-                self.state.transition_to(GameScreen::GameHUD);
-                true
-            }
-            (GameScreen::MainMenu, InputEvent::MouseClick { .. }) => {
-                self.state.transition_to(GameScreen::GameHUD);
-                true
-            }
-            (GameScreen::MainMenu, InputEvent::TouchTap { .. }) => {
-                self.state.transition_to(GameScreen::GameHUD);
-                true
-            }
-
             // Game HUD - movement and UI toggles
             (GameScreen::GameHUD, InputEvent::ToggleInventory) => {
                 self.state.transition_to(GameScreen::Inventory);
@@ -328,7 +297,7 @@ impl Game {
                 true
             }
 
-            // Inventory, Shop, Help Modal - go back to game
+            // Modal screens - go back to game HUD
             (
                 GameScreen::Inventory | GameScreen::Shop | GameScreen::HelpModal,
                 InputEvent::Escape,
@@ -344,170 +313,12 @@ impl Game {
                 true
             }
 
-            // Global escape handling
-            (_, InputEvent::Escape) => {
-                match self.state.current_screen {
-                    GameScreen::LoginScreen => false, // Can't escape from login
-                    GameScreen::ServerSelection => {
-                        self.state.transition_to(GameScreen::LoginScreen);
-                        true
-                    }
-                    GameScreen::MainMenu => {
-                        self.state.transition_to(GameScreen::ServerSelection);
-                        true
-                    }
-                    GameScreen::GameHUD => false, // Stay in game
-                    _ => {
-                        self.state.transition_to(GameScreen::GameHUD);
-                        true
-                    }
-                }
-            }
-
             _ => false, // Unhandled event
         }
     }
 
-    /// Render the login screen
-    fn render_login_screen(&self) {
-        // Set background
-        self.ctx.set_fill_style(&JsValue::from_str("#2a2a3a"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
-
-        // Title
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_font("48px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("RPG Game", self.width / 2.0, 150.0)
-            .unwrap();
-
-        // Subtitle
-        self.ctx.set_font("24px Arial");
-        self.ctx
-            .fill_text("Enter to Continue", self.width / 2.0, 200.0)
-            .unwrap();
-
-        // Instructions
-        self.ctx.set_font("16px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx
-            .fill_text(
-                "Click anywhere or press Enter to start",
-                self.width / 2.0,
-                self.height - 50.0,
-            )
-            .unwrap();
-    }
-
-    /// Render the server selection screen
-    fn render_server_selection(&self) {
-        // Set background
-        self.ctx.set_fill_style(&JsValue::from_str("#1a1a2e"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
-
-        // Title
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_font("36px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("Select Region", self.width / 2.0, 100.0)
-            .unwrap();
-
-        // Region options
-        let regions = [
-            ("EU", Region::EU),
-            ("ASIA", Region::Asia),
-            ("VIETNAM", Region::Vietnam),
-        ];
-        for (i, (name, region)) in regions.iter().enumerate() {
-            let y = 200.0 + (i as f64 * 80.0);
-            let is_selected = self.state.selected_region.as_ref() == Some(region);
-
-            // Highlight selected region
-            if is_selected {
-                self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
-            } else {
-                self.ctx.set_fill_style(&JsValue::from_str("#666666"));
-            }
-
-            // Draw region box
-            self.ctx
-                .fill_rect(self.width / 2.0 - 100.0, y - 25.0, 200.0, 50.0);
-
-            // Draw region text
-            self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-            self.ctx.set_font("24px Arial");
-            self.ctx.fill_text(name, self.width / 2.0, y + 5.0).unwrap();
-        }
-
-        // Instructions
-        self.ctx.set_font("16px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx
-            .fill_text(
-                "Click a region or press Enter",
-                self.width / 2.0,
-                self.height - 50.0,
-            )
-            .unwrap();
-    }
-
-    /// Render the main menu
-    fn render_main_menu(&self) {
-        // Set background
-        self.ctx.set_fill_style(&JsValue::from_str("#0f0f23"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
-
-        // Title
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_font("42px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("Main Menu", self.width / 2.0, 120.0)
-            .unwrap();
-
-        // Player info
-        if let Some(name) = &self.state.player_name {
-            self.ctx.set_font("20px Arial");
-            self.ctx.set_fill_style(&JsValue::from_str("#4fc3f7"));
-            self.ctx
-                .fill_text(&format!("Welcome, {name}!"), self.width / 2.0, 170.0)
-                .unwrap();
-        }
-
-        if let Some(region) = &self.state.selected_region {
-            self.ctx.set_font("16px Arial");
-            self.ctx.set_fill_style(&JsValue::from_str("#888888"));
-            self.ctx
-                .fill_text(&format!("Region: {region:?}"), self.width / 2.0, 200.0)
-                .unwrap();
-        }
-
-        // Start game button
-        self.ctx.set_fill_style(&JsValue::from_str("#228b22"));
-        self.ctx
-            .fill_rect(self.width / 2.0 - 100.0, 250.0, 200.0, 50.0);
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_font("24px Arial");
-        self.ctx
-            .fill_text("Start Game", self.width / 2.0, 280.0)
-            .unwrap();
-
-        // Instructions
-        self.ctx.set_font("16px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx
-            .fill_text(
-                "Click Start Game or press Enter",
-                self.width / 2.0,
-                self.height - 50.0,
-            )
-            .unwrap();
-    }
-
-    /// Render the game HUD (main gameplay screen)
-    fn render_game_hud(&self) {
+    /// Render only the game world elements (ball, player, etc.) - no UI
+    fn render_game_world(&self) {
         // Set background
         self.ctx.set_fill_style(&JsValue::from_str("#1e1e1e"));
         self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
@@ -539,255 +350,6 @@ impl Game {
             )
             .unwrap();
         self.ctx.fill();
-
-        // HUD elements
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_font("16px Arial");
-        self.ctx.set_text_align("left");
-
-        // Player position
-        self.ctx
-            .fill_text(
-                &format!(
-                    "Player: ({:.0}, {:.0})",
-                    self.state.player_x, self.state.player_y
-                ),
-                10.0,
-                30.0,
-            )
-            .unwrap();
-
-        // Controls help
-        self.ctx.set_font("14px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx
-            .fill_text("WASD/Arrows: Move", 10.0, self.height - 90.0)
-            .unwrap();
-        self.ctx
-            .fill_text("I: Inventory", 10.0, self.height - 70.0)
-            .unwrap();
-        self.ctx
-            .fill_text("T: Shop", 10.0, self.height - 50.0)
-            .unwrap();
-        self.ctx
-            .fill_text("H: Help", 10.0, self.height - 30.0)
-            .unwrap();
-
-        // Game title
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_font("24px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("RPG Game World", self.width / 2.0, 30.0)
-            .unwrap();
-    }
-
-    /// Render the inventory screen
-    fn render_inventory(&self) {
-        // Semi-transparent overlay
-        self.ctx
-            .set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
-
-        // Inventory panel
-        let panel_width = 400.0;
-        let panel_height = 300.0;
-        let panel_x = (self.width - panel_width) / 2.0;
-        let panel_y = (self.height - panel_height) / 2.0;
-
-        self.ctx.set_fill_style(&JsValue::from_str("#2a2a3a"));
-        self.ctx
-            .fill_rect(panel_x, panel_y, panel_width, panel_height);
-
-        // Border
-        self.ctx.set_stroke_style(&JsValue::from_str("#4fc3f7"));
-        self.ctx.set_line_width(2.0);
-        self.ctx
-            .stroke_rect(panel_x, panel_y, panel_width, panel_height);
-
-        // Title
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_font("24px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("Inventory", self.width / 2.0, panel_y + 40.0)
-            .unwrap();
-
-        // Placeholder items
-        self.ctx.set_font("16px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#cccccc"));
-        self.ctx
-            .fill_text("• Health Potion x3", self.width / 2.0, panel_y + 80.0)
-            .unwrap();
-        self.ctx
-            .fill_text("• Magic Sword", self.width / 2.0, panel_y + 110.0)
-            .unwrap();
-        self.ctx
-            .fill_text("• Iron Shield", self.width / 2.0, panel_y + 140.0)
-            .unwrap();
-
-        // Close instruction
-        self.ctx.set_font("14px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx
-            .fill_text(
-                "Press ESC to close",
-                self.width / 2.0,
-                panel_y + panel_height - 20.0,
-            )
-            .unwrap();
-    }
-
-    /// Render the shop screen
-    fn render_shop(&self) {
-        // Semi-transparent overlay
-        self.ctx
-            .set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.8)"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
-
-        // Shop panel
-        let panel_width = 450.0;
-        let panel_height = 350.0;
-        let panel_x = (self.width - panel_width) / 2.0;
-        let panel_y = (self.height - panel_height) / 2.0;
-
-        self.ctx.set_fill_style(&JsValue::from_str("#3a2a2a"));
-        self.ctx
-            .fill_rect(panel_x, panel_y, panel_width, panel_height);
-
-        // Border
-        self.ctx.set_stroke_style(&JsValue::from_str("#ffd700"));
-        self.ctx.set_line_width(2.0);
-        self.ctx
-            .stroke_rect(panel_x, panel_y, panel_width, panel_height);
-
-        // Title
-        self.ctx.set_fill_style(&JsValue::from_str("#ffd700"));
-        self.ctx.set_font("24px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("Shop", self.width / 2.0, panel_y + 40.0)
-            .unwrap();
-
-        // Shop items
-        self.ctx.set_font("16px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#cccccc"));
-        self.ctx
-            .fill_text(
-                "• Health Potion - 50 gold",
-                self.width / 2.0,
-                panel_y + 80.0,
-            )
-            .unwrap();
-        self.ctx
-            .fill_text(
-                "• Magic Scroll - 100 gold",
-                self.width / 2.0,
-                panel_y + 110.0,
-            )
-            .unwrap();
-        self.ctx
-            .fill_text(
-                "• Steel Armor - 500 gold",
-                self.width / 2.0,
-                panel_y + 140.0,
-            )
-            .unwrap();
-        self.ctx
-            .fill_text(
-                "• Enchanted Ring - 1000 gold",
-                self.width / 2.0,
-                panel_y + 170.0,
-            )
-            .unwrap();
-
-        // Player gold
-        self.ctx.set_font("18px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#ffd700"));
-        self.ctx
-            .fill_text("Gold: 750", self.width / 2.0, panel_y + 220.0)
-            .unwrap();
-
-        // Close instruction
-        self.ctx.set_font("14px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx
-            .fill_text(
-                "Press ESC to close",
-                self.width / 2.0,
-                panel_y + panel_height - 20.0,
-            )
-            .unwrap();
-    }
-
-    /// Render the help modal
-    fn render_help_modal(&self) {
-        // Semi-transparent overlay
-        self.ctx
-            .set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.9)"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
-
-        // Help panel
-        let panel_width = 500.0;
-        let panel_height = 400.0;
-        let panel_x = (self.width - panel_width) / 2.0;
-        let panel_y = (self.height - panel_height) / 2.0;
-
-        self.ctx.set_fill_style(&JsValue::from_str("#2a3a2a"));
-        self.ctx
-            .fill_rect(panel_x, panel_y, panel_width, panel_height);
-
-        // Border
-        self.ctx.set_stroke_style(&JsValue::from_str("#90ee90"));
-        self.ctx.set_line_width(2.0);
-        self.ctx
-            .stroke_rect(panel_x, panel_y, panel_width, panel_height);
-
-        // Title
-        self.ctx.set_fill_style(&JsValue::from_str("#90ee90"));
-        self.ctx.set_font("24px Arial");
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text("Help & Controls", self.width / 2.0, panel_y + 40.0)
-            .unwrap();
-
-        // Help content
-        self.ctx.set_font("16px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_text_align("left");
-
-        let help_text = [
-            "Movement:",
-            "  • WASD or Arrow Keys - Move player",
-            "",
-            "UI Controls:",
-            "  • I - Toggle Inventory",
-            "  • T - Toggle Shop",
-            "  • H or F1 - Toggle Help",
-            "  • ESC - Go back/Close panels",
-            "",
-            "Mouse/Touch:",
-            "  • Click to interact with UI elements",
-            "  • Tap on mobile devices",
-        ];
-
-        for (i, line) in help_text.iter().enumerate() {
-            self.ctx
-                .fill_text(line, panel_x + 20.0, panel_y + 80.0 + (i as f64 * 20.0))
-                .unwrap();
-        }
-
-        // Close instruction
-        self.ctx.set_font("14px Arial");
-        self.ctx.set_fill_style(&JsValue::from_str("#aaaaaa"));
-        self.ctx.set_text_align("center");
-        self.ctx
-            .fill_text(
-                "Press ESC to close",
-                self.width / 2.0,
-                panel_y + panel_height - 20.0,
-            )
-            .unwrap();
     }
 }
 
@@ -848,9 +410,9 @@ mod tests {
     fn test_new_game_state_initialization() {
         let state = GameState::new(800.0, 600.0);
 
-        assert_eq!(state.current_screen, GameScreen::LoginScreen);
-        assert_eq!(state.selected_region, None);
-        assert_eq!(state.player_name, None);
+        assert_eq!(state.current_screen, GameScreen::GameHUD);
+        assert_eq!(state.selected_region, Some(Region::EU));
+        assert_eq!(state.player_name, Some("Player".to_string()));
         assert!(!state.is_loading);
         assert_eq!(state.error_message, None);
         assert_eq!(state.player_x, 400.0);
@@ -863,11 +425,11 @@ mod tests {
     fn test_screen_transitions() {
         let mut state = GameState::new(800.0, 600.0);
 
-        state.transition_to(GameScreen::ServerSelection);
-        assert_eq!(state.current_screen, GameScreen::ServerSelection);
+        state.transition_to(GameScreen::Inventory);
+        assert_eq!(state.current_screen, GameScreen::Inventory);
 
-        state.transition_to(GameScreen::MainMenu);
-        assert_eq!(state.current_screen, GameScreen::MainMenu);
+        state.transition_to(GameScreen::Shop);
+        assert_eq!(state.current_screen, GameScreen::Shop);
 
         state.transition_to(GameScreen::GameHUD);
         assert_eq!(state.current_screen, GameScreen::GameHUD);
@@ -877,8 +439,7 @@ mod tests {
     fn test_player_movement() {
         let mut state = GameState::new(800.0, 600.0);
 
-        // Movement should only work in GameHUD screen
-        state.transition_to(GameScreen::GameHUD);
+        // Movement should work since we start in GameHUD
         let initial_x = state.player_x;
         let initial_y = state.player_y;
 

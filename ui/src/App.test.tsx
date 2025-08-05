@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
+import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import App from './App';
 
@@ -27,21 +27,6 @@ afterEach(() => {
 });
 
 describe('App Component', () => {
-  it('renders the game title and description', () => {
-    render(() => <App />);
-
-    expect(screen.getByText('🎮 RPG Game')).toBeInTheDocument();
-    expect(
-      screen.getByText('A Rust + WASM RPG with SolidJS frontend')
-    ).toBeInTheDocument();
-  });
-
-  it('shows loading status initially', () => {
-    render(() => <App />);
-
-    expect(screen.getByText(/Status:/)).toBeInTheDocument();
-  });
-
   it('renders the game canvas', () => {
     render(() => <App />);
 
@@ -56,38 +41,7 @@ describe('App Component', () => {
     expect(screen.getByText('Start/Resume')).toBeInTheDocument();
     expect(screen.getByText('Pause')).toBeInTheDocument();
     expect(screen.getByText('Restart')).toBeInTheDocument();
-  });
-
-  it('renders architecture information', () => {
-    render(() => <App />);
-
-    expect(
-      screen.getByText(/Enhanced Rust \+ WASM Backend/)
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Enhanced SolidJS Frontend/)).toBeInTheDocument();
-    expect(
-      screen.getByText('Multi-screen game state management')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Reactive UI state management')
-    ).toBeInTheDocument();
-  });
-
-  it('renders game features list', () => {
-    render(() => <App />);
-
-    expect(screen.getByText(/Multiple game screens/)).toBeInTheDocument();
-    expect(screen.getByText(/Comprehensive input system/)).toBeInTheDocument();
-    expect(screen.getByText(/Inventory and Shop systems/)).toBeInTheDocument();
-  });
-
-  it('shows technical details', () => {
-    render(() => <App />);
-
-    expect(
-      screen.getByText(/The enhanced game engine is written in Rust/)
-    ).toBeInTheDocument();
-    expect(screen.getByText(/wasm-bindgen bindings/)).toBeInTheDocument();
+    expect(screen.getByText('🧪 Test Error')).toBeInTheDocument();
   });
 
   it('initializes with proper canvas size', () => {
@@ -118,13 +72,22 @@ describe('App Component', () => {
     expect(canvas).toBeInTheDocument();
   });
 
-  it('starts the game initialization process on mount', async () => {
+  it('renders simplified UI structure without informational content', () => {
     render(() => <App />);
 
-    // Should show loading status
-    await waitFor(() => {
-      expect(screen.getByText(/Status:/)).toBeInTheDocument();
-    });
+    // Should NOT have header or info sections (simplified UI)
+    expect(screen.queryByText('🎮 RPG Game')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('About This Enhanced RPG')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('RPG Game Features')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Technical Architecture')
+    ).not.toBeInTheDocument();
+
+    // Should only have game canvas and controls
+    expect(document.getElementById('game-canvas')).toBeInTheDocument();
+    expect(screen.getByText('Start/Resume')).toBeInTheDocument();
   });
 });
 
@@ -153,22 +116,21 @@ describe('Game Controls Integration', () => {
 });
 
 describe('Component Structure', () => {
-  it('has proper semantic structure', () => {
+  it('has proper simplified structure', () => {
     render(() => <App />);
 
-    // Should have header
-    expect(screen.getByRole('banner')).toBeInTheDocument();
+    // Should NOT have header (simplified UI)
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
 
-    // Should have main content areas (updated for new content)
-    expect(screen.getByText('About This Enhanced RPG')).toBeInTheDocument();
-    expect(screen.getByText('RPG Game Features')).toBeInTheDocument();
-    expect(screen.getByText('Technical Architecture')).toBeInTheDocument();
+    // Should have essential game elements only
+    expect(document.getElementById('game-canvas')).toBeInTheDocument();
+    expect(screen.getByText('Start/Resume')).toBeInTheDocument();
   });
 
   it('has proper styling classes', () => {
     const { container } = render(() => <App />);
 
-    // The first child is now the ErrorToastManager, second child is the main container
+    // The first child is the ErrorToastManager, second child is the main container
     expect(container.children[1]).toHaveClass('app-container');
     expect(screen.getByText('Start/Resume').parentElement).toHaveClass(
       'dev-controls'
