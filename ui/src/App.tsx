@@ -127,31 +127,34 @@ const App = () => {
   const toggleFullscreen = () => {
     const newFullscreenState = !isFullscreen();
     setIsFullscreen(newFullscreenState);
-    
+
     // Resize canvas immediately when toggling fullscreen
     setTimeout(() => resizeCanvas(), 0);
-    
+
     // Capture current state before any async operations to avoid reactivity issues
     const currentCanvasSize = canvasSize();
     const currentGameStatus = gameStatus();
     const currentIsGameRunning = isGameRunning();
-    
+
     // Use browser's fullscreen API if available
     if (newFullscreenState) {
       if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch((error) => {
+        document.documentElement.requestFullscreen().catch(error => {
           // Fallback to CSS-only fullscreen if browser fullscreen fails
-          errorLogger.logGameError('Browser fullscreen not supported or denied', {
-            error: error.message,
-            canvasSize: currentCanvasSize,
-            gameStatus: currentGameStatus,
-            isGameRunning: currentIsGameRunning,
-          });
+          errorLogger.logGameError(
+            'Browser fullscreen not supported or denied',
+            {
+              error: error.message,
+              canvasSize: currentCanvasSize,
+              gameStatus: currentGameStatus,
+              isGameRunning: currentIsGameRunning,
+            }
+          );
         });
       }
     } else {
       if (document.exitFullscreen && document.fullscreenElement) {
-        document.exitFullscreen().catch((error) => {
+        document.exitFullscreen().catch(error => {
           errorLogger.logGameError('Exit fullscreen failed', {
             error: error.message,
             canvasSize: currentCanvasSize,
@@ -248,7 +251,10 @@ const App = () => {
     };
 
     document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.removeEventListener(
+      'webkitfullscreenchange',
+      handleFullscreenChange
+    );
     document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
     document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
 
@@ -282,7 +288,9 @@ const App = () => {
         </GameStateManager>
 
         {/* Development Controls */}
-        <div class={`dev-controls ${isFullscreen() ? 'fullscreen-controls' : ''}`}>
+        <div
+          class={`dev-controls ${isFullscreen() ? 'fullscreen-controls' : ''}`}
+        >
           <button
             class="button"
             onClick={resumeGame}
@@ -305,7 +313,8 @@ const App = () => {
             onClick={toggleFullscreen}
             title={isFullscreen() ? 'Exit Fullscreen' : 'Enter Fullscreen'}
           >
-            {isFullscreen() ? '🔲' : '⛶'} {isFullscreen() ? 'Exit' : 'Fullscreen'}
+            {isFullscreen() ? '🔲' : '⛶'}{' '}
+            {isFullscreen() ? 'Exit' : 'Fullscreen'}
           </button>
 
           {/* Test button for demonstrating error reporting */}

@@ -35,6 +35,8 @@ export interface GameContext {
   canvasSize?: { width: number; height: number };
   gameStatus?: string;
   isGameRunning?: boolean;
+  isFullscreen?: boolean;
+  error?: string;
 }
 
 export class ErrorLogger {
