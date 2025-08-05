@@ -1,5 +1,10 @@
-import { Component, Show } from 'solid-js';
-import { GameState, GameScreen, InputManager } from './GameTypes';
+import { Component, Show, createEffect } from 'solid-js';
+import {
+  GameState,
+  GameScreen,
+  InputManager,
+  EnhancedGameInstance,
+} from './GameTypes';
 import MobileControls from './MobileControls';
 import {
   GameHUDScreen,
@@ -18,7 +23,7 @@ export const GameUI: Component<{
   canvasSize: { width: number; height: number };
   inputManager?: InputManager | null;
   isMobile?: boolean;
-  gameInstance: any; // EnhancedGameInstance
+  gameInstance: EnhancedGameInstance | null;
 }> = props => {
   const setupCanvas = (canvas: HTMLCanvasElement) => {
     props.onCanvasReady(canvas);
@@ -57,34 +62,36 @@ export const GameUI: Component<{
 const ScreenSelector: Component<{
   screen: GameScreen;
   gameState: GameState;
-  gameInstance: any;
+  gameInstance: EnhancedGameInstance | null;
 }> = props => {
-  const screenProps = {
+  const screenProps = () => ({
     gameState: props.gameState,
     currentScreen: props.screen,
     gameInstance: props.gameInstance,
-  };
+  });
 
   // Debug logging
-  console.log('ScreenSelector rendering with screen:', props.screen);
-  console.log('Screen type:', typeof props.screen);
+  createEffect(() => {
+    // console.log('ScreenSelector rendering with screen:', props.screen);
+    // console.log('Screen type:', typeof props.screen);
+  });
 
   return (
     <>
       <Show when={props.screen === 'GameHUD'}>
-        <GameHUDScreen {...screenProps} />
+        <GameHUDScreen {...screenProps()} />
       </Show>
 
       <Show when={props.screen === 'Inventory'}>
-        <InventoryScreen {...screenProps} />
+        <InventoryScreen {...screenProps()} />
       </Show>
 
       <Show when={props.screen === 'Shop'}>
-        <ShopScreen {...screenProps} />
+        <ShopScreen {...screenProps()} />
       </Show>
 
       <Show when={props.screen === 'HelpModal'}>
-        <HelpScreen {...screenProps} />
+        <HelpScreen {...screenProps()} />
       </Show>
     </>
   );

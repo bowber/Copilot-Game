@@ -1,4 +1,11 @@
-import { Component, createSignal, onMount, onCleanup, JSX, createEffect } from 'solid-js';
+import {
+  Component,
+  createSignal,
+  onMount,
+  onCleanup,
+  JSX,
+  createEffect,
+} from 'solid-js';
 import { errorLogger } from '../utils/error-logger';
 
 // Enhanced interface for the new RPG game backend
@@ -260,13 +267,13 @@ export const GameStateManager: Component<{
 
   // Poll game state regularly
   const updateGameState = () => {
-    console.log('updateGameState called, gameInstance:', !!props.gameInstance);
+    // console.log('updateGameState called, gameInstance:', !!props.gameInstance);
     if (props.gameInstance) {
       try {
         const screenStr = props.gameInstance.get_current_screen();
         const stateStr = props.gameInstance.get_game_state();
 
-        console.log('Got screen:', screenStr, 'state:', stateStr);
+        // console.log('Got screen:', screenStr, 'state:', stateStr);
         setCurrentScreen(screenStr as GameScreen);
         setGameState(JSON.parse(stateStr) as GameState);
       } catch (error) {
@@ -274,7 +281,7 @@ export const GameStateManager: Component<{
         console.error('Failed to get game state:', error);
       }
     } else {
-      console.log('No game instance available');
+      // console.log('No game instance available');
       setCurrentScreen(null);
       setGameState(null);
     }
@@ -292,11 +299,11 @@ export const GameStateManager: Component<{
 
   // Also update when gameInstance prop changes
   createEffect(() => {
-    console.log('GameInstance changed:', !!props.gameInstance);
+    // console.log('GameInstance changed:', !!props.gameInstance);
     updateGameState();
   });
 
-  return props.children(gameState(), currentScreen());
+  return <>{props.children(gameState(), currentScreen())}</>;
 };
 
 export default {

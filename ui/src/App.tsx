@@ -50,7 +50,9 @@ const App = () => {
 
       if (canvasRef) {
         // Create the enhanced game instance
-        const game = window.wasmBindings.start_game('game-canvas') as EnhancedGameInstance;
+        const game = window.wasmBindings.start_game(
+          'game-canvas'
+        ) as EnhancedGameInstance;
         setGameInstance(game);
         setGameStatus('Game ready!');
 
@@ -233,9 +235,12 @@ const App = () => {
         <GameStateManager gameInstance={gameInstance()}>
           {(gameState, currentScreen) => {
             // Debug logging
-            console.log('GameStateManager rendering:', { gameState, currentScreen });
-            console.log('Game instance exists:', !!gameInstance());
-            
+            // console.log('GameStateManager rendering:', {
+            //   gameState,
+            //   currentScreen,
+            // });
+            // console.log('Game instance exists:', !!gameInstance());
+
             return (
               <GameUI
                 gameState={gameState}

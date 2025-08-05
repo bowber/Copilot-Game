@@ -31,11 +31,12 @@ export const GameHUDScreen: Component<GameScreenProps> = props => {
           </Show>
           <Show when={props.gameState?.player_position}>
             <span class="coordinates">
-              📍 Position: ({Math.round(props.gameState!.player_position[0])}, {Math.round(props.gameState!.player_position[1])})
+              📍 Position: ({Math.round(props.gameState!.player_position[0])},{' '}
+              {Math.round(props.gameState!.player_position[1])})
             </span>
           </Show>
         </div>
-        
+
         <div class="game-info">
           <span class="level">Level 1</span>
           <div class="health-bar">
@@ -47,7 +48,11 @@ export const GameHUDScreen: Component<GameScreenProps> = props => {
 
       {/* Side HUD */}
       <div class="side-hud">
-        <button class="hud-btn inventory-btn" onClick={toggleInventory} title="Inventory (I)">
+        <button
+          class="hud-btn inventory-btn"
+          onClick={toggleInventory}
+          title="Inventory (I)"
+        >
           🎒
         </button>
         <button class="hud-btn shop-btn" onClick={toggleShop} title="Shop (T)">
@@ -78,7 +83,7 @@ export const GameHUDScreen: Component<GameScreenProps> = props => {
             <span class="action">Help</span>
           </div>
         </div>
-        
+
         <div class="action-bar">
           <div class="action-slot">🗡️</div>
           <div class="action-slot">🛡️</div>
@@ -107,10 +112,15 @@ export const InventoryScreen: Component<GameScreenProps> = props => {
   return (
     <div class="game-screen inventory-screen">
       <div class="modal-overlay" onClick={closeInventory}>
-        <div class="modal-panel inventory-panel" onClick={(e) => e.stopPropagation()}>
+        <div
+          class="modal-panel inventory-panel"
+          onClick={e => e.stopPropagation()}
+        >
           <div class="modal-header">
             <h3>🎒 Inventory</h3>
-            <button class="close-btn" onClick={closeInventory}>✕</button>
+            <button class="close-btn" onClick={closeInventory}>
+              ✕
+            </button>
           </div>
 
           <div class="inventory-content">
@@ -169,10 +179,12 @@ export const ShopScreen: Component<GameScreenProps> = props => {
   return (
     <div class="game-screen shop-screen">
       <div class="modal-overlay" onClick={closeShop}>
-        <div class="modal-panel shop-panel" onClick={(e) => e.stopPropagation()}>
+        <div class="modal-panel shop-panel" onClick={e => e.stopPropagation()}>
           <div class="modal-header">
             <h3>🏪 Shop</h3>
-            <button class="close-btn" onClick={closeShop}>✕</button>
+            <button class="close-btn" onClick={closeShop}>
+              ✕
+            </button>
           </div>
 
           <div class="shop-content">
@@ -264,47 +276,76 @@ export const HelpScreen: Component<GameScreenProps> = props => {
   return (
     <div class="game-screen help-screen">
       <div class="modal-overlay" onClick={closeHelp}>
-        <div class="modal-panel help-panel" onClick={(e) => e.stopPropagation()}>
+        <div class="modal-panel help-panel" onClick={e => e.stopPropagation()}>
           <div class="modal-header">
             <h3>❓ Help & Controls</h3>
-            <button class="close-btn" onClick={closeHelp}>✕</button>
+            <button class="close-btn" onClick={closeHelp}>
+              ✕
+            </button>
           </div>
 
           <div class="help-content">
             <div class="help-section">
               <h4>🎮 Movement</h4>
               <ul>
-                <li><strong>WASD</strong> or <strong>Arrow Keys</strong> - Move your character</li>
-                <li><strong>Mouse</strong> - Look around (planned)</li>
+                <li>
+                  <strong>WASD</strong> or <strong>Arrow Keys</strong> - Move
+                  your character
+                </li>
+                <li>
+                  <strong>Mouse</strong> - Look around (planned)
+                </li>
               </ul>
             </div>
 
             <div class="help-section">
               <h4>🎯 UI Controls</h4>
               <ul>
-                <li><strong>I</strong> - Toggle Inventory</li>
-                <li><strong>T</strong> - Toggle Shop</li>
-                <li><strong>H</strong> or <strong>F1</strong> - Toggle Help</li>
-                <li><strong>ESC</strong> - Go back/Close panels</li>
+                <li>
+                  <strong>I</strong> - Toggle Inventory
+                </li>
+                <li>
+                  <strong>T</strong> - Toggle Shop
+                </li>
+                <li>
+                  <strong>H</strong> or <strong>F1</strong> - Toggle Help
+                </li>
+                <li>
+                  <strong>ESC</strong> - Go back/Close panels
+                </li>
               </ul>
             </div>
 
             <div class="help-section">
               <h4>📱 Mouse/Touch</h4>
               <ul>
-                <li><strong>Click</strong> - Interact with UI elements</li>
-                <li><strong>Tap</strong> - Mobile device interaction</li>
-                <li><strong>Drag</strong> - Move items (planned)</li>
+                <li>
+                  <strong>Click</strong> - Interact with UI elements
+                </li>
+                <li>
+                  <strong>Tap</strong> - Mobile device interaction
+                </li>
+                <li>
+                  <strong>Drag</strong> - Move items (planned)
+                </li>
               </ul>
             </div>
 
             <div class="help-section">
               <h4>🗺️ Game Flow</h4>
               <ul>
-                <li>Start at the <strong>Login Screen</strong></li>
-                <li>Select your preferred <strong>Region</strong></li>
-                <li>Navigate through the <strong>Main Menu</strong></li>
-                <li>Enter the <strong>Game World</strong> and explore!</li>
+                <li>
+                  Start at the <strong>Login Screen</strong>
+                </li>
+                <li>
+                  Select your preferred <strong>Region</strong>
+                </li>
+                <li>
+                  Navigate through the <strong>Main Menu</strong>
+                </li>
+                <li>
+                  Enter the <strong>Game World</strong> and explore!
+                </li>
               </ul>
             </div>
 

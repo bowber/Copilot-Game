@@ -751,7 +751,7 @@
 }
 
 .help-section li::before {
-  content: "•";
+  content: '•';
   color: #4fc3f7;
   position: absolute;
   left: 0;
@@ -780,8 +780,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -799,28 +803,28 @@
   .screen-content {
     padding: 1rem;
   }
-  
+
   .game-title {
     font-size: 2rem;
   }
-  
+
   .modal-panel {
     width: 95vw;
     margin: 1rem;
   }
-  
+
   .top-hud,
   .bottom-hud {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .player-stats,
   .controls-hint {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .side-hud {
     flex-direction: row;
     bottom: 1rem;
@@ -830,11 +834,11 @@
     transform: none;
     justify-content: center;
   }
-  
+
   .minimap {
     display: none;
   }
-  
+
   .inventory-grid {
     grid-template-columns: repeat(3, 1fr);
   }

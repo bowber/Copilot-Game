@@ -43,8 +43,8 @@ pub struct GameState {
 impl GameState {
     pub fn new(width: f64, height: f64) -> Self {
         Self {
-            current_screen: GameScreen::GameHUD, // Start directly in game
-            selected_region: Some(Region::EU), // Default region
+            current_screen: GameScreen::GameHUD,     // Start directly in game
+            selected_region: Some(Region::EU),       // Default region
             player_name: Some("Player".to_string()), // Default player name
             is_loading: false,
             error_message: None,

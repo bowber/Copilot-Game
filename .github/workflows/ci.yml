@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  pull_request_review:
+    types: [ submitted ]
+  pull_request_target:
+    types: [ review_requested ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

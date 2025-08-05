@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@solidjs/testing-library';
+import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import App from './App';
 
@@ -77,10 +77,14 @@ describe('App Component', () => {
 
     // Should NOT have header or info sections (simplified UI)
     expect(screen.queryByText('🎮 RPG Game')).not.toBeInTheDocument();
-    expect(screen.queryByText('About This Enhanced RPG')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('About This Enhanced RPG')
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('RPG Game Features')).not.toBeInTheDocument();
-    expect(screen.queryByText('Technical Architecture')).not.toBeInTheDocument();
-    
+    expect(
+      screen.queryByText('Technical Architecture')
+    ).not.toBeInTheDocument();
+
     // Should only have game canvas and controls
     expect(document.getElementById('game-canvas')).toBeInTheDocument();
     expect(screen.getByText('Start/Resume')).toBeInTheDocument();
