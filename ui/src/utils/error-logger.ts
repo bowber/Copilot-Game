@@ -51,6 +51,9 @@ export class ErrorLogger {
   }
 
   private setupGlobalErrorHandling(): void {
+    // Only setup error handling in browser environment
+    if (typeof window === 'undefined') return;
+
     // Capture unhandled errors
     window.addEventListener('error', event => {
       this.logError({
@@ -118,18 +121,18 @@ export class ErrorLogger {
 
   private getSystemContext(): SystemContext {
     return {
-      userAgent: navigator.userAgent,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'test-environment',
       screen: {
-        width: screen.width,
-        height: screen.height,
-        devicePixelRatio: window.devicePixelRatio || 1,
+        width: typeof screen !== 'undefined' ? screen.width : 1024,
+        height: typeof screen !== 'undefined' ? screen.height : 768,
+        devicePixelRatio: typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1,
       },
       viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+        height: typeof window !== 'undefined' ? window.innerHeight : 768,
       },
       timestamp: new Date().toISOString(),
-      url: window.location.href,
+      url: typeof window !== 'undefined' ? window.location.href : 'test-environment',
     };
   }
 
@@ -163,12 +166,14 @@ export class ErrorLogger {
       this.errors = this.errors.slice(0, this.maxErrors);
     }
 
-    // Emit custom event for toast notifications
-    window.dispatchEvent(
-      new CustomEvent('error-logged', {
-        detail: errorDetails,
-      })
-    );
+    // Emit custom event for toast notifications (only in browser)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('error-logged', {
+          detail: errorDetails,
+        })
+      );
+    }
   }
 
   public logManualError(message: string, gameState?: GameContext): void {

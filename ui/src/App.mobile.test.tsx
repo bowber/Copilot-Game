@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup } from '@solidjs/testing-library';
 import App from './App';
 
@@ -6,6 +6,11 @@ describe('Mobile Functionality', () => {
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllTimers();
   });
 
   it('detects mobile based on window width', async () => {
