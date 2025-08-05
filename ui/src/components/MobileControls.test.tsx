@@ -90,7 +90,7 @@ describe('MobileControls', () => {
       render(() => <VirtualJoystick inputManager={mockInputManager} />);
 
       const joystick = document.querySelector(
-        '.virtual-joystick',
+        '.virtual-joystick'
       ) as HTMLElement;
       expect(joystick).toBeTruthy();
 

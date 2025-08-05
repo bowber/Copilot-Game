@@ -218,7 +218,7 @@ export class InputManager {
           `Error handling virtual ${isPressed ? 'keydown' : 'keyup'} event for ${code}`,
           {
             error: String(error),
-          },
+          }
         );
         return false;
       }
